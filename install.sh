@@ -28,5 +28,4 @@ if [ "$SHELL" != "/usr/bin/zsh" ]; then
     sudo apt install -y zsh
     sh -c "$(curl -fsSL https://starship.rs/install.sh)" -- --platform unknown-linux-musl
     sh -c " KEEP_ZSHRC=yes ZSH=$HOME/.oh-my-zsh $(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-    zsh
 fi;
