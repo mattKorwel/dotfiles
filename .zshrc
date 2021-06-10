@@ -1,7 +1,32 @@
-ZSH_DISABLE_COMPFIX=true
-export ZSH="/Users/mattkorwel/.oh-my-zsh"
-ZSH_THEME="spaceship"
-plugins=(git)
+export ZSH="${HOME}/.oh-my-zsh"
+# The following lines were added by compinstall
+
+zstyle ':completion:*' completer _expand _complete _ignored _correct _approximate
+zstyle ':completion:*' matcher-list '' 'm:{[:lower:]}={[:upper:]}' 'm:{[:lower:][:upper:]}={[:upper:][:lower:]}' 'r:|[._-]=** r:|=** l:|=*'
+zstyle :compinstall filename "${HOME}/.zshrc"
+
+autoload -Uz compinit
+compinit
+
+# End of lines added by compinstall
+# Lines configured by zsh-newuser-install
+HISTFILE=~/.histfile
+HISTSIZE=1000
+SAVEHIST=100000
+bindkey -e
+# End of lines configured by zsh-newuser-install
+
+plugins=(
+    git
+    docker
+    kubectl
+    thefuck
+    helm
+    rbenv
+    golang
+)
+
+source $ZSH/oh-my-zsh.sh
 
 function gadd(){
     message="$*"
@@ -29,5 +54,6 @@ alias ddb="az mysql db delete -g $DEV_USER -s $DEV_USER -n github_enterprise -y 
 alias cleandev="dr && dpvc && dpv && ddb"
 [[ /usr/local/bin/kubectl ]] && source <(kubectl completion zsh)
 
-
 export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH"
+
+eval "$(starship init zsh)"
