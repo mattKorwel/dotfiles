@@ -1,6 +1,6 @@
 #!/bin/bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install fonts-firacode python3-dev python3-pip python3-setuptools -y
+sudo apt install fonts-firacode python3-dev python3-pip python3-setuptools zsh-syntax-highlighting  -y
 sudo pip3 install thefuck
 
 # git config
