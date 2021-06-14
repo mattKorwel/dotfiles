@@ -36,9 +36,11 @@ if [ "$SHELL" != "/usr/bin/zsh" ]; then
     sh -c "$(curl -fsSL https://starship.rs/install.sh)" -- --platform unknown-linux-musl --yes
     sh -c " KEEP_ZSHRC=yes CHSH=no RUNZSH=no ZSH=$HOME/.oh-my-zsh $(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-    ZSH_AS="${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
-    rm -rf ${ZSH_AS} git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_AS}
+set -ex
 
-    ZSH_SH="${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+    ZSH_AS="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+    rm -rf ${ZSH_AS} && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_AS}
+
+    ZSH_SH="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
     rm -rf ${ZSH_SH} && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_SH}
 fi
