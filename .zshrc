@@ -46,6 +46,7 @@ funciton gswitch(){
 }
 
 export DEV_USER=makorwel
+export GPG_TTY=$(tty)
 
 alias k="kubectl"
 alias a="script/apply"
