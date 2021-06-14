@@ -15,8 +15,7 @@ git config --global pull.rebase true
 git config --global github.user "mattKorwel"
 git config --global push.default "simple"
 git config --global url.git@github.com:.insteadof=https://github.com/
-git config --global gpg.x509.program smimesign
-git config --global gpg.format x509
+git config --global commit.gpgsign true
 
 # git completion
 curl -fLo ~/.zsh/git-completion.zsh --create-dirs https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.zsh
