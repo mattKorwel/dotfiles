@@ -59,4 +59,5 @@ alias cleandev="dr && dpvc && dpv && ddb"
 
 export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH"
 
+export STARSHIP_CONFIG=~/.starship/config.toml
 eval "$(starship init zsh)"
