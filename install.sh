@@ -14,10 +14,6 @@ git config --global remote.origin.prune true
 git config --global pull.rebase true
 git config --global github.user "mattKorwel"
 git config --global push.default "simple"
-# trying to normalize set up with codespaces. wip
-#git config --global url."git@github.com:".insteadOf https://github.com/
-#git config --global commit.gpgsign true
-#git config --global user.signingkey 6F8BED0E756DCFAF
 
 # git completion
 curl -fLo ~/.zsh/git-completion.zsh --create-dirs https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.zsh
@@ -33,9 +29,13 @@ if [[ -n "${HOME}/.zshrc" ]]; then
   rm "${HOME}/.zshrc"
 fi
 
+if [[ -d "${HOME}/.oh-my-zsh" ]]; then
+  rm -rf "${HOME}/.oh-my-zsh"  
+fi
+
 # links
-ln -s /workspaces/.codespaces/.persistedshare/dotfiles/.zshrc ~/
-mkdir -p ~/.config && ls -s -f /workspaces/.codespaces/.persistedshare/dotfiles/starship.toml ~/.config
+ln -sf /workspaces/.codespaces/.persistedshare/dotfiles/.zshrc ~/
+mkdir -p ~/.starship && ln -sf /workspaces/.codespaces/.persistedshare/dotfiles/config.toml ~/.starship
 
 # zsh 
 if [ "$SHELL" != "/usr/bin/zsh" ]; then
@@ -49,5 +49,5 @@ if [ "$SHELL" != "/usr/bin/zsh" ]; then
     ZSH_SH="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
     rm -rf ${ZSH_SH} && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_SH}
     
-    chsh $(which zsh)
+    chsh -s $(which zsh)
 fi
