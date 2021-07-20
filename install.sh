@@ -28,7 +28,7 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 
 # links
-ln -s -f ~/.dotfiles/.zshrc ~/
+cp ~/.dotfiles/.zshrc ~/.zshrc
 mkdir -p ~/.config && ls -s -f ~/.dotfiles/starship.toml ~/.config
 
 # zsh 
