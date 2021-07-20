@@ -2,88 +2,71 @@ add_newline = true
 
 command_timeout = 10000
 
-prompt_order = [
-    "username",
-    "memory_usage",
-    "hostname",
-    "kubernetes",
-    "directory",
-    "git_branch",
-    "git_commit",
-    "git_state",
-    "git_status",
-    "hg_branch",
-    "package",
-    "dotnet",
-    "elixir",
-    "elm",
-    "golang",
-    "haskell",
-    "java",
-    "nodejs",
-    "php",
-    "python",
-    "ruby",
-    "rust",
-    "terraform",
-    "nix_shell",
-    "conda",
-    "aws",
-    "env_var",
-    "crystal",
-    "line_break",
-    "battery",
-    "cmd_duration",
-    "jobs",
-    "time",
-    "character",
-]
+format = """\
+  $username\
+  $hostname\
+  $directory\
+  $git_branch\
+  $git_commit\
+  $git_state\
+  $git_status\
+  $git_metrics\
+  $kubernetes\
+  $docker_context\
+  $dotnet\
+  $nodejs\
+  $php\
+  $python\
+  $ruby\
+  $env_var\
+  $cmd_duration\
+  $line_break\
+  $battery\
+  $time\
+  $character\
+  """
+
+[docker_context]
+symbol = " "
+format = "via [🐋 $context](blue bold)"
 
 [battery]
-full_symbol = "🔋"
-charging_symbol = "⚡️"
-discharging_symbol = "💀"
-
-[[battery.display]]
-threshold = 10
-style = "bold red"
-
-[[battery.display]]
-threshold = 60
-style = "bold yellow"
-
+format = "[$symbol$percentage]($style) "
 [[battery.display]]
 threshold = 100
-style = "bold green"
+style = "bold red"
 
 [character]
-# symbol = "➜"
-error_symbol = "✗"
-use_symbol_for_status = true
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vicmd_symbol = "[❮](bold green)"
 
 [cmd_duration]
 min_time = 500
-prefix = "tooks "
+format = "[took  $duration]($style)"
 
 [directory]
 truncation_length = 6
 truncate_to_repo = true
-prefix = "in "
+format = "../[$path]($style)[$read_only]($read_only_style) "
 style = "bold cyan"
 disabled = false
+read_only = " "
 
-# [env_var]
-# variable = "SHELL"
-# default = "Zsh"
-# prefix = "<"
-# suffix = ">"
+[env_var.TEST_ALL_FEATURES]
+format = "with TEST_ALL_FEATURES=[$env_value]($style) "
 
 [git_branch]
-# symbol = "🌱 "
-truncation_length = 8
+format = "on [$symbol$branch]($style) "
+symbol = " "
+truncation_length = 100
 truncation_symbol = "..."
 style = "bold purple"
 disabled = false
+
+[git_commit]
+commit_hash_length = 4
+tag_symbol = "🔖 "
 
 [git_state]
 cherry_pick = "CHERRY PICKING"
@@ -93,32 +76,29 @@ revert = "REVERTING"
 bisect = "BISECTING"
 am = "AM"
 am_or_rebase = "AM/REBASE"
-progress_divider = " of "
 style = "bold yellow"
 disabled = false
 
-# [git_status]
-# conflicted = "🏳"
-# ahead = "🏎💨"
-# behind = "😰"
-# diverged = "😵"
-# untracked = "🤷‍"
-# stashed = "📦"
-# modified = "📝"
-# staged.value = "++"
-# staged.style = "green"
-# staged_count.enabled = true
-# staged_count.style = "green"
-# renamed = "👅"
-# deleted = "🗑"
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+conflicted = "🏳"
+ahead = "🏎💨 ${count}"
+behind = "😰 ${count}"
+diverged = "😵 ${ahead_count}⇣${behind_count}"
+untracked = "🤷‍ ${count}"
+stashed = "📦"
+modified = "📝"
+staged = '[++\($count\)](green)'
+renamed = "👅"
+deleted = "🗑"
 
-# [[git_status.count]]
-# enabled = true
+[git_metrics]
+added_style = "bold blue"
+format = '[+$added]($added_style)/[-$deleted]($deleted_style) '
 
 [hostname]
-ssh_only = false
-prefix = "🤖"
-# suffix = "⟫"
+ssh_only = true
+format = "[$hostname]($style) in "
 trim_at = "."
 disabled = false
 
@@ -141,7 +121,7 @@ disabled = false
 [nodejs]
 symbol = "⬢ "
 style = "bold green"
-disabled = false
+disabled = true
 
 # [package]
 # symbol = "📦 "
@@ -149,21 +129,81 @@ disabled = false
 # disabled = false
 
 [python]
-symbol = "🐍 "
+symbol = " "
 pyenv_version_name = false
 pyenv_prefix = "pyenv"
 style = "bold yellow"
 disabled = false
 
-# [time]
-# format = "🕙%T"
+[time]
+format = '[\[$time\]](green) '
 # style_root = "bold red"
 # style_user = "bold yellow"
 # show_always = true
-# disabled = false
+disabled = false
 
 [username]
 style_root = "bold red"
 style_user = "bold yellow"
 show_always = false
-disabled = false
+disabled = true
+
+[aws]
+symbol = "  "
+
+[conda]
+symbol = " "
+
+[dart]
+symbol = " "
+
+[elixir]
+symbol = " "
+
+[elm]
+symbol = " "
+
+[golang]
+symbol = " "
+
+[hg_branch]
+symbol = " "
+
+[java]
+symbol = " "
+
+[julia]
+symbol = " "
+
+[memory_usage]
+symbol = " "
+
+[nim]
+symbol = " "
+
+[nix_shell]
+symbol = " "
+
+[package]
+symbol = " "
+
+[perl]
+symbol = " "
+
+[php]
+symbol = " "
+
+[ruby]
+symbol = " "
+
+[rust]
+symbol = " "
+
+[scala]
+symbol = " "
+
+[shlvl]
+symbol = " "
+
+[swift]
+symbol = "ﯣ "
