@@ -1,5 +1,7 @@
 add_newline = true
 
+command_timeout = 10000
+
 prompt_order = [
     "username",
     "memory_usage",
