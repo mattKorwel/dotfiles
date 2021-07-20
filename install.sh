@@ -35,7 +35,7 @@ fi
 
 # links
 ln -s /workspaces/.codespaces/.persistedshare/dotfiles/.zshrc ~/
-mkdir -p ~/.config && ls -s -f ~/.dotfiles/starship.toml ~/.config
+mkdir -p ~/.config && ls -s -f /workspaces/.codespaces/.persistedshare/dotfiles/starship.toml ~/.config
 
 # zsh 
 if [ "$SHELL" != "/usr/bin/zsh" ]; then
