@@ -28,7 +28,13 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 
 # links
-cp ~/.dotfiles/.zshrc ~/.zshrc
+# delete existing .zshrc if it already exists
+if [[ -n "${HOME}/.zshrc" ]]; then
+  rm "${HOME}/.zshrc"
+fi
+
+# links
+ln -s /workspaces/.codespaces/.persistedshare/dotfiles/.zshrc ~/
 mkdir -p ~/.config && ls -s -f ~/.dotfiles/starship.toml ~/.config
 
 # zsh 
