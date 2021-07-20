@@ -14,9 +14,10 @@ git config --global remote.origin.prune true
 git config --global pull.rebase true
 git config --global github.user "mattKorwel"
 git config --global push.default "simple"
-git config --global url."git@github.com:".insteadOf https://github.com/
-git config --global commit.gpgsign true
-git config --global user.signingkey 6F8BED0E756DCFAF
+# trying to normalize set up with codespaces. wip
+#git config --global url."git@github.com:".insteadOf https://github.com/
+#git config --global commit.gpgsign true
+#git config --global user.signingkey 6F8BED0E756DCFAF
 
 # git completion
 curl -fLo ~/.zsh/git-completion.zsh --create-dirs https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.zsh
