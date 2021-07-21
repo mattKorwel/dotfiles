@@ -3,6 +3,7 @@ add_newline = true
 command_timeout = 10000
 
 format = """\
+  $time\
   $username\
   $hostname\
   $directory\
@@ -102,31 +103,16 @@ format = "[$hostname]($style) in "
 trim_at = "."
 disabled = false
 
-# [jobs]
-# symbol = "+ "
-# threshold = 1
-
 [line_break]
 disabled = false
-
-# [memory_usage]
-# disabled = false
-# show_percentage = true
-# show_swap = false
-# threshold = -1
-# symbol = " "
-# separator = "/"
-# style = "bold dimmed white"
 
 [nodejs]
 symbol = "⬢ "
 style = "bold green"
 disabled = true
 
-# [package]
-# symbol = "📦 "
-# style = "bold red"
-# disabled = false
+[package]
+disabled = true
 
 [python]
 symbol = " "
@@ -137,9 +123,7 @@ disabled = false
 
 [time]
 format = '[\[$time\]](green) '
-# style_root = "bold red"
-# style_user = "bold yellow"
-# show_always = true
+time_format = "%c"
 disabled = false
 
 [username]
