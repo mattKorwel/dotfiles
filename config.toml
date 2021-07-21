@@ -28,7 +28,7 @@ format = """\
 
 [docker_context]
 symbol = " "
-format = "via [🐋 $context](blue bold)"
+format = "via [$symbol $context](blue bold)"
 
 [battery]
 format = "[$symbol$percentage]($style) "
@@ -54,7 +54,7 @@ disabled = false
 read_only = " "
 
 [env_var.TEST_ALL_FEATURES]
-format = "with TEST_ALL_FEATURES=[$env_value]($style) "
+format = " with TEST_ALL_FEATURES=[$env_value]($style) "
 
 [git_branch]
 format = "on [$symbol$branch]($style) "
@@ -82,14 +82,14 @@ disabled = false
 [git_status]
 format = '([\[$all_status$ahead_behind\]]($style) )'
 conflicted = "🏳"
-ahead = "🏎💨 ${count}"
-behind = "😰 ${count}"
-diverged = "😵 ${ahead_count}⇣${behind_count}"
-untracked = "🤷‍ ${count}"
-stashed = "📦"
-modified = "📝"
+ahead = "⇡ ${count}"
+behind = "⇣ ${count}"
+diverged = "⇕ ${ahead_count}⇣${behind_count}"
+untracked = "? ${count}"
+stashed = "$"
+modified = "!"
 staged = '[++\($count\)](green)'
-renamed = "👅"
+renamed = "»"
 deleted = "🗑"
 
 [git_metrics]
