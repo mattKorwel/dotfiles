@@ -23,7 +23,6 @@ format = """\
   $cmd_duration\
   $line_break\
   $battery\
-  $time\
   $character\
   """
 
@@ -103,16 +102,31 @@ format = "[$hostname]($style) in "
 trim_at = "."
 disabled = false
 
+# [jobs]
+# symbol = "+ "
+# threshold = 1
+
 [line_break]
 disabled = false
+
+# [memory_usage]
+# disabled = false
+# show_percentage = true
+# show_swap = false
+# threshold = -1
+# symbol = " "
+# separator = "/"
+# style = "bold dimmed white"
 
 [nodejs]
 symbol = "⬢ "
 style = "bold green"
 disabled = true
 
-[package]
-disabled = true
+# [package]
+# symbol = "📦 "
+# style = "bold red"
+# disabled = false
 
 [python]
 symbol = " "
@@ -124,6 +138,9 @@ disabled = false
 [time]
 format = '[\[$time\]](green) '
 time_format = "%c"
+# style_root = "bold red"
+# style_user = "bold yellow"
+# show_always = true
 disabled = false
 
 [username]
