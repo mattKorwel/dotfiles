@@ -1,6 +1,6 @@
 #!/bin/bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install fonts-firacode python3-dev python3-pip python3-setuptools -y
+sudo apt install fonts-firacode -y
 sudo pip3 install thefuck
 
 # git config
@@ -14,14 +14,10 @@ git config --global remote.origin.prune true
 git config --global pull.rebase true
 git config --global github.user "mattKorwel"
 git config --global push.default "simple"
+git config --global commit.gpgsign true
 
 # git completion
 curl -fLo ~/.zsh/git-completion.zsh --create-dirs https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.zsh
-
-#kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
 
 # links
 # delete existing .zshrc if it already exists
