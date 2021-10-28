@@ -37,12 +37,12 @@ function gadd(){
 
 funciton gfresh(){
     branch="$*"
-    git co . && git co main && git pull && git co -b ${branch}
+    git co . && git co master && git pull && git co -b ${branch}
 }
 
 funciton gswitch(){
     branch="$*"
-    git co . && git co main && git pull && git co ${branch}
+    git co . && git co master && git pull && git co ${branch}
 }
 
 export DEV_USER=makorwel
