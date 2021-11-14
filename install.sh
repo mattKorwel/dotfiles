@@ -1,7 +1,4 @@
 #!/bin/bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install fonts-firacode -y
-sudo pip3 install thefuck
 
 # git config
 git config --global alias.co "checkout"
