@@ -19,12 +19,8 @@ bindkey -e
 plugins=(
     git
     docker
-    thefuck
-    helm
-    rbenv
     golang
     zsh-syntax-highlighting
-    zsh-autosuggestions
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -48,6 +44,7 @@ export DEV_USER=makorwel
 export GPG_TTY=$(tty)
 
 alias brt="bin/rails test $@"
+alias brt="TEST_ALL_FEATURES=1 bin/rails test $@"
 
 export STARSHIP_CONFIG=~/.starship/config.toml
 eval "$(starship init zsh)"
