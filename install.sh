@@ -16,6 +16,9 @@ git config --global commit.gpgsign true
 # git completion
 curl -fLo ~/.zsh/git-completion.zsh --create-dirs https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.zsh
 
+# (in Codespaces VM associated with repo github/github only)
+echo "machine goproxy.githubapp.com login nobody password $GITHUB_TOKEN" >> $HOME/.netrc
+
 # links
 # delete existing .zshrc if it already exists
 if [[ -n "${HOME}/.zshrc" ]]; then
