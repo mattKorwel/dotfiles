@@ -10,7 +10,7 @@ import { execSync } from 'node:child_process';
 
 const BRANCH = process.argv[2] || execSync('git branch --show-current').toString().trim();
 const RUN_ID_OVERRIDE = process.argv[3];
-const WORKFLOW = 'ci.yml';
+const WORKFLOW_OVERRIDE = process.argv[4];
 
 let REPO;
 try {
@@ -19,6 +19,8 @@ try {
 } catch (e) {
   REPO = 'google-gemini/gemini-cli';
 }
+
+const FAILED_FILES = new Set();
 
 function runGh(args) {
   try {
@@ -47,7 +49,7 @@ function extractTestFile(failureText) {
 function generateTestCommand(failedFilesMap) {
   const workspaceToFiles = new Map();
   for (const [file, info] of failedFilesMap.entries()) {
-    if (file === "Job Error" || file === "Unknown File" || file === "Build/Lint Error") continue;
+    if (["Job Error", "Unknown File", "Build Error", "Lint Error"].includes(file)) continue;
     let workspace = "@google/gemini-cli";
     let relPath = file;
     if (file.startsWith("packages/core/")) {
@@ -73,28 +75,57 @@ async function monitor() {
   if (RUN_ID_OVERRIDE) {
     runId = RUN_ID_OVERRIDE;
   } else {
-    const runListOutput = runGh(`run list --workflow "${WORKFLOW}" --branch "${BRANCH}" --limit 1 --json databaseId`);
-    if (!runListOutput || JSON.parse(runListOutput).length === 0) {
-       console.log(`No runs found for branch ${BRANCH}.`);
-       process.exit(0);
+    // Try provided workflow, then ci.yml, then trigger_e2e.yml
+    const workflows = WORKFLOW_OVERRIDE ? [WORKFLOW_OVERRIDE] : ['ci.yml', 'trigger_e2e.yml'];
+    for (const wf of workflows) {
+      const runListOutput = runGh(`run list --workflow "${wf}" --branch "${BRANCH}" --limit 1 --json databaseId,status`);
+      if (runListOutput) {
+        const runs = JSON.parse(runListOutput);
+        if (runs.length > 0 && runs[0].status !== 'completed') {
+          runId = runs[0].databaseId;
+          console.log(`Monitoring active workflow: ${wf}`);
+          break;
+        }
+      }
     }
-    runId = JSON.parse(runListOutput)[0].databaseId;
+    
+    // Fallback to latest run of any type if none are in flight
+    if (!runId) {
+      const runListOutput = runGh(`run list --branch "${BRANCH}" --limit 1 --json databaseId,workflowName`);
+      if (runListOutput) {
+        const runs = JSON.parse(runListOutput);
+        if (runs.length > 0) {
+          runId = runs[0].databaseId;
+          console.log(`Monitoring latest run: ${runs[0].workflowName} (${runId})`);
+        }
+      }
+    }
   }
 
+  if (!runId) {
+    console.log(`No active or recent runs found for branch ${BRANCH}.`);
+    process.exit(0);
+  }
+
+  console.log(`Target Run ID: ${runId}\n`);
+
   while (true) {
-    const runOutput = runGh(`run view "${runId}" --json databaseId,status,conclusion`);
+    const runOutput = runGh(`run view "${runId}" --json databaseId,status,conclusion,workflowName`);
     if (!runOutput) break;
     const run = JSON.parse(runOutput);
-    
+    const runStatus = run.status;
+
+    let passed = 0, failed = 0, running = 0, queued = 0, total = 0;
     const jobsOutput = runGh(`run view "${runId}" --json jobs`);
+    
     if (jobsOutput) {
       const { jobs } = JSON.parse(jobsOutput);
+      total = jobs.length;
       const failedJobs = jobs.filter(j => j.conclusion === 'failure');
 
       if (failedJobs.length > 0) {
         console.log(`\n❌ CI Failures Detected (${failedJobs.length} jobs failed). Processing...`);
         const fileToTests = new Map();
-
         for (const job of failedJobs) {
           const failures = fetchFailuresViaApi(job.databaseId);
           if (failures.trim()) {
@@ -102,7 +133,6 @@ async function monitor() {
               if (!line.trim()) return;
               const file = extractTestFile(line);
               const filePath = file || (line.toLowerCase().includes('lint') || line.toLowerCase().includes('build') ? 'Build/Lint Error' : 'Unknown File');
-              
               let testName = line;
               if (line.includes(' > ')) {
                  testName = line.split(' > ').slice(1).join(' > ').trim();
@@ -128,25 +158,26 @@ async function monitor() {
         if (testCmd) {
           console.log('\n🚀 Run this to verify fixes:');
           console.log(testCmd);
-        } else {
-          // If it was a lint error, suggest the lint command
-          if (Array.from(fileToTests.keys()).some(k => k.includes('Lint'))) {
-             console.log('\n🚀 Run this to verify lint fixes:');
-             console.log('npm run lint:all');
-          }
+        } else if (Array.from(fileToTests.keys()).some(k => k.includes('Lint'))) {
+           console.log('\n🚀 Run this to verify lint fixes:');
+           console.log('npm run lint:all');
         }
         console.log('---------------------------------');
         process.exit(1);
       }
+
+      for (const job of jobs) {
+        if (job.status === "in_progress") running++;
+        else if (job.status === "queued") queued++;
+        else if (job.conclusion === "success") passed++;
+        else if (job.conclusion === "failure") failed++;
+      }
     }
 
-    const counts = JSON.parse(jobsOutput).jobs.reduce((acc, j) => {
-      acc[j.status === 'completed' ? (j.conclusion || 'other') : j.status]++;
-      return acc;
-    }, { success: 0, failure: 0, in_progress: 0, queued: 0, other: 0 });
+    const completed = passed + failed;
+    process.stdout.write(`\r⏳ Monitoring... ${completed}/${total} (${passed} passed, ${failed} failed, ${running} running, ${queued} queued)          `);
 
-    process.stdout.write(`\r⏳ Monitoring... ${counts.success} passed, ${counts.failure} failed, ${counts.in_progress} running, ${counts.queued} queued          `);
-    if (run.status === 'completed') {
+    if (runStatus === 'completed') {
       console.log('\n✅ All tests passed!');
       process.exit(0);
     }
