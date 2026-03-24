@@ -19,6 +19,8 @@ try {
   REPO = 'google-gemini/gemini-cli';
 }
 
+const FAILED_FILES = new Set();
+
 function runGh(args) {
   try {
     return execSync(`gh ${args}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
@@ -34,6 +36,19 @@ function fetchFailuresViaApi(jobId) {
   } catch (e) {
     return "";
   }
+}
+
+function isNoise(line) {
+  const lower = line.toLowerCase();
+  return (
+    lower.includes('* [new branch]') ||
+    lower.includes('npm warn') ||
+    lower.includes('fetching updates') ||
+    lower.includes('node:internal/errors') ||
+    lower.includes('at ') || // Stack traces
+    lower.includes('checkexecsyncerror') ||
+    lower.includes('node_modules')
+  );
 }
 
 function extractTestFile(failureText) {
@@ -69,25 +84,19 @@ function generateTestCommand(failedFilesMap) {
 
 async function monitor() {
   let targetRunIds = [];
-
   if (RUN_ID_OVERRIDE) {
     targetRunIds = [RUN_ID_OVERRIDE];
   } else {
-    // Find all runs triggered around the same time for this branch
     const runListOutput = runGh(`run list --branch "${BRANCH}" --limit 10 --json databaseId,status,workflowName,createdAt`);
     if (runListOutput) {
       const runs = JSON.parse(runListOutput);
       const activeRuns = runs.filter(r => r.status !== 'completed');
-      
       if (activeRuns.length > 0) {
         targetRunIds = activeRuns.map(r => r.databaseId);
         console.log(`Monitoring active workflows: ${activeRuns.map(r => r.workflowName).join(', ')}`);
       } else if (runs.length > 0) {
-        // If none are active, take the latest set (within 1 minute of the absolute latest)
         const latestTime = new Date(runs[0].createdAt).getTime();
-        targetRunIds = runs
-          .filter(r => (latestTime - new Date(r.createdAt).getTime()) < 60000)
-          .map(r => r.databaseId);
+        targetRunIds = runs.filter(r => (latestTime - new Date(r.createdAt).getTime()) < 60000).map(r => r.databaseId);
         console.log(`Monitoring latest workflows: ${runs.filter(r => targetRunIds.includes(r.databaseId)).map(r => r.workflowName).join(', ')}`);
       }
     }
@@ -114,7 +123,6 @@ async function monitor() {
       if (jobsOutput) {
         const { jobs } = JSON.parse(jobsOutput);
         totalJobs += jobs.length;
-        
         const failedJobs = jobs.filter(j => j.conclusion === 'failure');
         if (failedJobs.length > 0) {
           failuresFoundInLoop = true;
@@ -122,9 +130,9 @@ async function monitor() {
             const failures = fetchFailuresViaApi(job.databaseId);
             if (failures.trim()) {
               failures.split('\n').forEach(line => {
-                if (!line.trim()) return;
+                if (!line.trim() || isNoise(line)) return;
                 const file = extractTestFile(line);
-                const filePath = file || (line.toLowerCase().includes('lint') || line.toLowerCase().includes('build') ? 'Build/Lint Error' : 'Unknown File');
+                const filePath = file || (line.toLowerCase().includes('lint') ? 'Lint Error' : (line.toLowerCase().includes('build') ? 'Build Error' : 'Unknown File'));
                 let testName = line;
                 if (line.includes(' > ')) {
                    testName = line.split(' > ').slice(1).join(' > ').trim();
@@ -140,7 +148,6 @@ async function monitor() {
             }
           }
         }
-
         for (const job of jobs) {
           if (job.status === "in_progress") allRunning++;
           else if (job.status === "queued") allQueued++;
@@ -152,10 +159,13 @@ async function monitor() {
 
     if (failuresFoundInLoop) {
       console.log(`\n\n❌ Failures detected across ${allFailed} job(s). Stopping monitor...`);
-      console.log('\n--- Structured Failure Report ---');
+      console.log('\n--- Structured Failure Report (Noise Filtered) ---');
       for (const [file, tests] of fileToTests.entries()) {
         console.log(`\nCategory/File: ${file}`);
-        tests.forEach(t => console.log(`  - ${t}`));
+        // Limit output per file if it's too large
+        const testsArr = Array.from(tests);
+        testsArr.slice(0, 10).forEach(t => console.log(`  - ${t}`));
+        if (testsArr.length > 10) console.log(`  ... and ${testsArr.length - 10} more`);
       }
       const testCmd = generateTestCommand(fileToTests);
       if (testCmd) {
@@ -170,7 +180,6 @@ async function monitor() {
 
     const completed = allPassed + allFailed;
     process.stdout.write(`\r⏳ Monitoring ${targetRunIds.length} runs... ${completed}/${totalJobs} jobs (${allPassed} passed, ${allFailed} failed, ${allRunning} running, ${allQueued} queued)          `);
-
     if (!anyRunInProgress) {
       console.log('\n✅ All workflows passed!');
       process.exit(0);
