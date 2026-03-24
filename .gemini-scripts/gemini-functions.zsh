@@ -354,13 +354,13 @@ gh-fail-summary() {
 
 # CI Monitor (Node-based)
 function gmonitor() {
-  node ~/.gemini-scripts/ci-monitor.mjs "$@"
+  node ~/dev/dotfiles/.gemini-scripts/ci-monitor.mjs "$@"
 }
 
 # CI Monitor + Auto-Test
 function gcheck() {
   local tmp_out=$(mktemp)
-  node ~/.gemini-scripts/ci-monitor.mjs "$@" | tee $tmp_out
+  node ~/dev/dotfiles/.gemini-scripts/ci-monitor.mjs "$@" | tee $tmp_out
   local cmd=$(grep "🚀 Run this to verify fixes:" -A 1 $tmp_out | tail -n 1)
   if [ -n "$cmd" ]; then
     echo -e "\n📦 CI Failures detected. Running local verification...\n"
