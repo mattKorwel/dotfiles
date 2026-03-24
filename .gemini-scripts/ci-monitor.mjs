@@ -163,7 +163,7 @@ async function monitor() {
       for (const [file, tests] of fileToTests.entries()) {
         console.log(`\nCategory/File: ${file}`);
         // Limit output per file if it's too large
-        const testsArr = Array.from(tests);
+        const testsArr = Array.from(tests).map(t => t.length > 500 ? t.substring(0, 500) + "... [TRUNCATED]" : t);
         testsArr.slice(0, 10).forEach(t => console.log(`  - ${t}`));
         if (testsArr.length > 10) console.log(`  ... and ${testsArr.length - 10} more`);
       }
