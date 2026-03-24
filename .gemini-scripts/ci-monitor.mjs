@@ -30,7 +30,7 @@ function runGh(args) {
 
 function fetchFailuresViaApi(jobId) {
   try {
-    const cmd = `gh api repos/${REPO}/actions/jobs/${jobId}/logs | grep -E " FAIL |❌"`;
+    const cmd = `gh api repos/${REPO}/actions/jobs/${jobId}/logs | grep -E " FAIL |❌|ERROR|Lint failed|Build failed"`;
     return execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 10 * 1024 * 1024 }).toString();
   } catch (e) {
     return "";
@@ -38,27 +38,18 @@ function fetchFailuresViaApi(jobId) {
 }
 
 function extractTestFile(failureText) {
-  // Aggressively strip markdown noise and brackets
   const cleanLine = failureText.replace(/[|#\[\]()]/g, " ").replace(/<[^>]*>/g, " ").trim();
-  
-  // Try to find a file path ending in .test.ts or .test.js or .test.tsx
   const fileMatch = cleanLine.match(/([\w\/._-]+\.test\.[jt]sx?)/);
-  if (fileMatch) {
-    return fileMatch[1];
-  }
-  
+  if (fileMatch) return fileMatch[1];
   return null;
 }
 
 function generateTestCommand(failedFilesMap) {
   const workspaceToFiles = new Map();
-  
   for (const [file, info] of failedFilesMap.entries()) {
-    if (file === "Job Error" || file === "Unknown File") continue;
-    
+    if (file === "Job Error" || file === "Unknown File" || file === "Build/Lint Error") continue;
     let workspace = "@google/gemini-cli";
     let relPath = file;
-    
     if (file.startsWith("packages/core/")) {
       workspace = "@google/gemini-cli-core";
       relPath = file.replace("packages/core/", "");
@@ -66,13 +57,10 @@ function generateTestCommand(failedFilesMap) {
       workspace = "@google/gemini-cli";
       relPath = file.replace("packages/cli/", "");
     }
-    
     relPath = relPath.replace(/^.*packages\/[^\/]+\//, "");
-    
     if (!workspaceToFiles.has(workspace)) workspaceToFiles.set(workspace, new Set());
     workspaceToFiles.get(workspace).add(relPath);
   }
-  
   const commands = [];
   for (const [workspace, files] of workspaceToFiles.entries()) {
     commands.push(`npm test -w ${workspace} -- ${Array.from(files).join(" ")}`);
@@ -105,7 +93,6 @@ async function monitor() {
 
       if (failedJobs.length > 0) {
         console.log(`\n❌ CI Failures Detected (${failedJobs.length} jobs failed). Processing...`);
-        
         const fileToTests = new Map();
 
         for (const job of failedJobs) {
@@ -114,27 +101,26 @@ async function monitor() {
             failures.split('\n').forEach(line => {
               if (!line.trim()) return;
               const file = extractTestFile(line);
-              const filePath = file || 'Unknown File';
+              const filePath = file || (line.toLowerCase().includes('lint') || line.toLowerCase().includes('build') ? 'Build/Lint Error' : 'Unknown File');
               
-              // Extract test name part
               let testName = line;
               if (line.includes(' > ')) {
                  testName = line.split(' > ').slice(1).join(' > ').trim();
               }
-
               if (!fileToTests.has(filePath)) fileToTests.set(filePath, new Set());
               fileToTests.get(filePath).add(testName);
             });
           } else {
             const step = job.steps?.find(s => s.conclusion === 'failure')?.name || 'unknown';
-            if (!fileToTests.has('Job Error')) fileToTests.set('Job Error', new Set());
-            fileToTests.get('Job Error').add(`${job.name}: Failed at step "${step}"`);
+            const category = step.toLowerCase().includes('lint') ? 'Lint Error' : (step.toLowerCase().includes('build') ? 'Build Error' : 'Job Error');
+            if (!fileToTests.has(category)) fileToTests.set(category, new Set());
+            fileToTests.get(category).add(`${job.name}: Failed at step "${step}"`);
           }
         }
 
         console.log('\n--- Structured Failure Report ---');
         for (const [file, tests] of fileToTests.entries()) {
-          console.log(`\nFile: ${file}`);
+          console.log(`\nCategory/File: ${file}`);
           tests.forEach(t => console.log(`  - ${t}`));
         }
 
@@ -142,6 +128,12 @@ async function monitor() {
         if (testCmd) {
           console.log('\n🚀 Run this to verify fixes:');
           console.log(testCmd);
+        } else {
+          // If it was a lint error, suggest the lint command
+          if (Array.from(fileToTests.keys()).some(k => k.includes('Lint'))) {
+             console.log('\n🚀 Run this to verify lint fixes:');
+             console.log('npm run lint:all');
+          }
         }
         console.log('---------------------------------');
         process.exit(1);
@@ -154,12 +146,10 @@ async function monitor() {
     }, { success: 0, failure: 0, in_progress: 0, queued: 0, other: 0 });
 
     process.stdout.write(`\r⏳ Monitoring... ${counts.success} passed, ${counts.failure} failed, ${counts.in_progress} running, ${counts.queued} queued          `);
-
     if (run.status === 'completed') {
       console.log('\n✅ All tests passed!');
       process.exit(0);
     }
-
     await new Promise(r => setTimeout(r, 15000));
   }
 }
