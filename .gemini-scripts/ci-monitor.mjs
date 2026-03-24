@@ -10,7 +10,6 @@ import { execSync } from 'node:child_process';
 
 const BRANCH = process.argv[2] || execSync('git branch --show-current').toString().trim();
 const RUN_ID_OVERRIDE = process.argv[3];
-const WORKFLOW_OVERRIDE = process.argv[4];
 
 let REPO;
 try {
@@ -19,8 +18,6 @@ try {
 } catch (e) {
   REPO = 'google-gemini/gemini-cli';
 }
-
-const FAILED_FILES = new Set();
 
 function runGh(args) {
   try {
@@ -32,7 +29,7 @@ function runGh(args) {
 
 function fetchFailuresViaApi(jobId) {
   try {
-    const cmd = `gh api repos/${REPO}/actions/jobs/${jobId}/logs | grep -iE " FAIL |❌|ERROR|Lint failed|Build failed|Exception|failed with exit code"|❌|ERROR|Lint failed|Build failed"`;
+    const cmd = `gh api repos/${REPO}/actions/jobs/${jobId}/logs | grep -iE " FAIL |❌|ERROR|Lint failed|Build failed|Exception|failed with exit code"`;
     return execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 10 * 1024 * 1024 }).toString();
   } catch (e) {
     return "";
@@ -71,114 +68,111 @@ function generateTestCommand(failedFilesMap) {
 }
 
 async function monitor() {
-  let runId;
+  let targetRunIds = [];
+
   if (RUN_ID_OVERRIDE) {
-    runId = RUN_ID_OVERRIDE;
+    targetRunIds = [RUN_ID_OVERRIDE];
   } else {
-    // Try provided workflow, then ci.yml, then trigger_e2e.yml
-    const workflows = WORKFLOW_OVERRIDE ? [WORKFLOW_OVERRIDE] : ['ci.yml', 'trigger_e2e.yml'];
-    for (const wf of workflows) {
-      const runListOutput = runGh(`run list --workflow "${wf}" --branch "${BRANCH}" --limit 1 --json databaseId,status`);
-      if (runListOutput) {
-        const runs = JSON.parse(runListOutput);
-        if (runs.length > 0 && runs[0].status !== 'completed') {
-          runId = runs[0].databaseId;
-          console.log(`Monitoring active workflow: ${wf}`);
-          break;
-        }
-      }
-    }
-    
-    // Fallback to latest run of any type if none are in flight
-    if (!runId) {
-      const runListOutput = runGh(`run list --branch "${BRANCH}" --limit 1 --json databaseId,workflowName`);
-      if (runListOutput) {
-        const runs = JSON.parse(runListOutput);
-        if (runs.length > 0) {
-          runId = runs[0].databaseId;
-          console.log(`Monitoring latest run: ${runs[0].workflowName} (${runId})`);
-        }
+    // Find all runs triggered around the same time for this branch
+    const runListOutput = runGh(`run list --branch "${BRANCH}" --limit 10 --json databaseId,status,workflowName,createdAt`);
+    if (runListOutput) {
+      const runs = JSON.parse(runListOutput);
+      const activeRuns = runs.filter(r => r.status !== 'completed');
+      
+      if (activeRuns.length > 0) {
+        targetRunIds = activeRuns.map(r => r.databaseId);
+        console.log(`Monitoring active workflows: ${activeRuns.map(r => r.workflowName).join(', ')}`);
+      } else if (runs.length > 0) {
+        // If none are active, take the latest set (within 1 minute of the absolute latest)
+        const latestTime = new Date(runs[0].createdAt).getTime();
+        targetRunIds = runs
+          .filter(r => (latestTime - new Date(r.createdAt).getTime()) < 60000)
+          .map(r => r.databaseId);
+        console.log(`Monitoring latest workflows: ${runs.filter(r => targetRunIds.includes(r.databaseId)).map(r => r.workflowName).join(', ')}`);
       }
     }
   }
 
-  if (!runId) {
-    console.log(`No active or recent runs found for branch ${BRANCH}.`);
+  if (targetRunIds.length === 0) {
+    console.log(`No runs found for branch ${BRANCH}.`);
     process.exit(0);
   }
 
-  console.log(`Target Run ID: ${runId}\n`);
-
   while (true) {
-    const runOutput = runGh(`run view "${runId}" --json databaseId,status,conclusion,workflowName`);
-    if (!runOutput) break;
-    const run = JSON.parse(runOutput);
-    const runStatus = run.status;
+    let allPassed = 0, allFailed = 0, allRunning = 0, allQueued = 0, totalJobs = 0;
+    let anyRunInProgress = false;
+    const fileToTests = new Map();
+    let failuresFoundInLoop = false;
 
-    let passed = 0, failed = 0, running = 0, queued = 0, total = 0;
-    const jobsOutput = runGh(`run view "${runId}" --json jobs`);
-    
-    if (jobsOutput) {
-      const { jobs } = JSON.parse(jobsOutput);
-      total = jobs.length;
-      const failedJobs = jobs.filter(j => j.conclusion === 'failure');
+    for (const runId of targetRunIds) {
+      const runOutput = runGh(`run view "${runId}" --json databaseId,status,conclusion,workflowName`);
+      if (!runOutput) continue;
+      const run = JSON.parse(runOutput);
+      if (run.status !== 'completed') anyRunInProgress = true;
 
-      if (failedJobs.length > 0) {
-        console.log(`\n❌ CI Failures Detected (${failedJobs.length} jobs failed). Processing...`);
-        const fileToTests = new Map();
-        for (const job of failedJobs) {
-          const failures = fetchFailuresViaApi(job.databaseId);
-          if (failures.trim()) {
-            failures.split('\n').forEach(line => {
-              if (!line.trim()) return;
-              const file = extractTestFile(line);
-              const filePath = file || (line.toLowerCase().includes('lint') || line.toLowerCase().includes('build') ? 'Build/Lint Error' : 'Unknown File');
-              let testName = line;
-              if (line.includes(' > ')) {
-                 testName = line.split(' > ').slice(1).join(' > ').trim();
-              }
-              if (!fileToTests.has(filePath)) fileToTests.set(filePath, new Set());
-              fileToTests.get(filePath).add(testName);
-            });
-          } else {
-            const step = job.steps?.find(s => s.conclusion === 'failure')?.name || 'unknown';
-            const category = step.toLowerCase().includes('lint') ? 'Lint Error' : (step.toLowerCase().includes('build') ? 'Build Error' : 'Job Error');
-            if (!fileToTests.has(category)) fileToTests.set(category, new Set());
-            fileToTests.get(category).add(`${job.name}: Failed at step "${step}"`);
+      const jobsOutput = runGh(`run view "${runId}" --json jobs`);
+      if (jobsOutput) {
+        const { jobs } = JSON.parse(jobsOutput);
+        totalJobs += jobs.length;
+        
+        const failedJobs = jobs.filter(j => j.conclusion === 'failure');
+        if (failedJobs.length > 0) {
+          failuresFoundInLoop = true;
+          for (const job of failedJobs) {
+            const failures = fetchFailuresViaApi(job.databaseId);
+            if (failures.trim()) {
+              failures.split('\n').forEach(line => {
+                if (!line.trim()) return;
+                const file = extractTestFile(line);
+                const filePath = file || (line.toLowerCase().includes('lint') || line.toLowerCase().includes('build') ? 'Build/Lint Error' : 'Unknown File');
+                let testName = line;
+                if (line.includes(' > ')) {
+                   testName = line.split(' > ').slice(1).join(' > ').trim();
+                }
+                if (!fileToTests.has(filePath)) fileToTests.set(filePath, new Set());
+                fileToTests.get(filePath).add(testName);
+              });
+            } else {
+              const step = job.steps?.find(s => s.conclusion === 'failure')?.name || 'unknown';
+              const category = step.toLowerCase().includes('lint') ? 'Lint Error' : (step.toLowerCase().includes('build') ? 'Build Error' : 'Job Error');
+              if (!fileToTests.has(category)) fileToTests.set(category, new Set());
+              fileToTests.get(category).add(`${job.name}: Failed at step "${step}"`);
+            }
           }
         }
 
-        console.log('\n--- Structured Failure Report ---');
-        for (const [file, tests] of fileToTests.entries()) {
-          console.log(`\nCategory/File: ${file}`);
-          tests.forEach(t => console.log(`  - ${t}`));
+        for (const job of jobs) {
+          if (job.status === "in_progress") allRunning++;
+          else if (job.status === "queued") allQueued++;
+          else if (job.conclusion === "success") allPassed++;
+          else if (job.conclusion === "failure") allFailed++;
         }
-
-        const testCmd = generateTestCommand(fileToTests);
-        if (testCmd) {
-          console.log('\n🚀 Run this to verify fixes:');
-          console.log(testCmd);
-        } else if (Array.from(fileToTests.keys()).some(k => k.includes('Lint'))) {
-           console.log('\n🚀 Run this to verify lint fixes:');
-           console.log('npm run lint:all');
-        }
-        console.log('---------------------------------');
-        process.exit(1);
-      }
-
-      for (const job of jobs) {
-        if (job.status === "in_progress") running++;
-        else if (job.status === "queued") queued++;
-        else if (job.conclusion === "success") passed++;
-        else if (job.conclusion === "failure") failed++;
       }
     }
 
-    const completed = passed + failed;
-    process.stdout.write(`\r⏳ Monitoring... ${completed}/${total} (${passed} passed, ${failed} failed, ${running} running, ${queued} queued)          `);
+    if (failuresFoundInLoop) {
+      console.log(`\n\n❌ Failures detected across ${allFailed} job(s). Stopping monitor...`);
+      console.log('\n--- Structured Failure Report ---');
+      for (const [file, tests] of fileToTests.entries()) {
+        console.log(`\nCategory/File: ${file}`);
+        tests.forEach(t => console.log(`  - ${t}`));
+      }
+      const testCmd = generateTestCommand(fileToTests);
+      if (testCmd) {
+        console.log('\n🚀 Run this to verify fixes:');
+        console.log(testCmd);
+      } else if (Array.from(fileToTests.keys()).some(k => k.includes('Lint'))) {
+         console.log('\n🚀 Run this to verify lint fixes:\nnpm run lint:all');
+      }
+      console.log('---------------------------------');
+      process.exit(1);
+    }
 
-    if (runStatus === 'completed') {
-      console.log('\n✅ All tests passed!');
+    const completed = allPassed + allFailed;
+    process.stdout.write(`\r⏳ Monitoring ${targetRunIds.length} runs... ${completed}/${totalJobs} jobs (${allPassed} passed, ${allFailed} failed, ${allRunning} running, ${allQueued} queued)          `);
+
+    if (!anyRunInProgress) {
+      console.log('\n✅ All workflows passed!');
       process.exit(0);
     }
     await new Promise(r => setTimeout(r, 15000));
