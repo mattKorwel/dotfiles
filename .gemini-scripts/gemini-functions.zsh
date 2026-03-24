@@ -360,15 +360,15 @@ function gmonitor() {
 # CI Monitor + Auto-Test
 
 # CI Monitor + Auto-Test/Lint
+
+# CI Monitor + Auto-Test/Lint
 function gcheck() {
   local tmp_out=$(mktemp)
   node ~/dev/dotfiles/.gemini-scripts/ci-monitor.mjs "$@" | tee $tmp_out
   
-  # Check for test command
-  local test_cmd=$(grep "🚀 Run this to verify fixes:" -A 1 $tmp_out | tail -n 1)
-  
-  # Check for lint command
-  local lint_cmd=$(grep "🚀 Run this to verify lint fixes:" -A 1 $tmp_out | tail -n 1)
+  # More robust extraction using grep -A 1 and filtering for non-empty lines
+  local test_cmd=$(grep -A 1 "🚀 Run this to verify fixes:" $tmp_out | grep -v "🚀" | grep "npm" | head -n 1)
+  local lint_cmd=$(grep -A 1 "🚀 Run this to verify lint fixes:" $tmp_out | grep -v "🚀" | grep "npm" | head -n 1)
 
   if [ -n "$test_cmd" ] || [ -n "$lint_cmd" ]; then
     echo -e "\n📦 CI Failures detected. Running local verification...\n"
@@ -385,4 +385,5 @@ function gcheck() {
   fi
   rm "$tmp_out"
 }
+
 
