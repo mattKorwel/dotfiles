@@ -32,7 +32,7 @@ function runGh(args) {
 
 function fetchFailuresViaApi(jobId) {
   try {
-    const cmd = `gh api repos/${REPO}/actions/jobs/${jobId}/logs | grep -E " FAIL |❌|ERROR|Lint failed|Build failed"`;
+    const cmd = `gh api repos/${REPO}/actions/jobs/${jobId}/logs | grep -iE " FAIL |❌|ERROR|Lint failed|Build failed|Exception|failed with exit code"|❌|ERROR|Lint failed|Build failed"`;
     return execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 10 * 1024 * 1024 }).toString();
   } catch (e) {
     return "";
