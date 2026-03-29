@@ -1,210 +1,60 @@
+# Move the prompt to a new line
 add_newline = true
 
-command_timeout = 10000
+# The main prompt layout
+# All "context" modules are placed after $fill to appear on the right
+format = """
+$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python$time
+$character"""
 
-format = """\
-  $time\
-  $username\
-  $hostname\
-  $directory\
-  $git_branch\
-  $git_commit\
-  $git_state\
-  $git_status\
-  $git_metrics\
-  $kubernetes\
-  $docker_context\
-  $dotnet\
-  $nodejs\
-  $php\
-  $python\
-  $ruby\
-  $env_var\
-  $cmd_duration\
-  $line_break\
-  $battery\
-  $character\
-  """
-
-[docker_context]
-symbol = " "
-format = "via [$symbol $context](blue bold)"
-
-[battery]
-format = "[$symbol$percentage]($style) "
-[[battery.display]]
-threshold = 100
-style = "bold red"
-
-[character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
-vicmd_symbol = "[❮](bold green)"
-
-[cmd_duration]
-min_time = 500
-format = "[took  $duration]($style)"
+# Customize the "fill" line (draws across the screen)
+[fill]
+symbol = "─"
+style = "#444444" # Subtle gray line
 
 [directory]
-truncation_length = 6
-truncate_to_repo = true
-format = "../[$path]($style)[$read_only]($read_only_style) "
-style = "bold cyan"
-disabled = false
-read_only = " "
-
-[env_var.TEST_ALL_FEATURES]
-format = " with TEST_ALL_FEATURES=[$env_value]($style) "
+style = "bold #00ffff" # Vibrant Cyan
+truncate_to_repo = false
+truncation_length = 8
 
 [git_branch]
-format = "on [$symbol$branch]($style) "
-symbol = " "
-truncation_length = 100
-truncation_symbol = "..."
-style = "bold purple"
-disabled = false
-
-[git_commit]
-commit_hash_length = 4
-tag_symbol = "🔖 "
-
-[git_state]
-cherry_pick = "CHERRY PICKING"
-rebase = "REBASING"
-merge = "MERGING"
-revert = "REVERTING"
-bisect = "BISECTING"
-am = "AM"
-am_or_rebase = "AM/REBASE"
-style = "bold yellow"
-disabled = false
+symbol = "on "
+style = "bold #00ff00" # Vibrant Green
 
 [git_status]
-format = '([\[$all_status$ahead_behind\]]($style) )'
-conflicted = "🏳"
-ahead = "⇡ ${count}"
-behind = "⇣ ${count}"
-diverged = "⇕ ${ahead_count}⇣${behind_count}"
-untracked = "? ${count}"
-stashed = "$"
-modified = "!"
-staged = '[++\($count\)](green)'
-renamed = "»"
-deleted = "🗑"
+style = "bold #ff0000" # Vibrant Red for status (shows changes)
+format = "([\\[$all_status$ahead_behind\\]]($style) )"
 
-[git_metrics]
-added_style = "bold blue"
-format = '[+$added]($added_style)/[-$deleted]($deleted_style) '
-
-[hostname]
-ssh_only = true
-format = "[$hostname]($style) in "
-trim_at = "."
-disabled = false
-
-# [jobs]
-# symbol = "+ "
-# threshold = 1
-
-[line_break]
-disabled = false
-
-# [memory_usage]
-# disabled = false
-# show_percentage = true
-# show_swap = false
-# threshold = -1
-# symbol = " "
-# separator = "/"
-# style = "bold dimmed white"
-
-[nodejs]
-symbol = "⬢ "
-style = "bold green"
-disabled = true
-
-# [package]
-# symbol = "📦 "
-# style = "bold red"
-# disabled = false
-
-[python]
-symbol = " "
-pyenv_version_name = false
-pyenv_prefix = "pyenv"
-style = "bold yellow"
-disabled = false
+[cmd_duration]
+min_time = 500 # Only show if command took more than 500ms
+style = "bold #ffcc00" # Vibrant Yellow
+format = "took [$duration]($style) "
 
 [time]
-format = '[\[$time\]](green) '
-time_format = "%c"
-# style_root = "bold red"
-# style_user = "bold yellow"
-# show_always = true
 disabled = false
+format = "at [$time](bold #888888) " # Subtle gray timestamp
+time_format = "%T" # HH:MM:SS
 
-[username]
-style_root = "bold red"
-style_user = "bold yellow"
-show_always = false
-disabled = true
-
-[aws]
-symbol = "  "
-
-[conda]
-symbol = " "
-
-[dart]
-symbol = " "
-
-[elixir]
-symbol = " "
-
-[elm]
-symbol = " "
+[nodejs]
+format = "node [$version](bold #00ff00) "
+detect_files = ["package.json", ".node-version", "nvmrc"]
 
 [golang]
-symbol = " "
+format = "go [$version](bold #00ffff) "
 
-[hg_branch]
-symbol = " "
+[docker_context]
+format = "docker [$context](bold #00aaff) "
 
-[java]
-symbol = " "
+[python]
+format = "py [${symbol}${pyenv_prefix}${version}](bold #ffcc00) "
 
-[julia]
-symbol = " "
+[character]
+success_symbol = "[>](bold #00ff00)" # Vibrant Green
+error_symbol = "[>](bold #ff0000)" # Vibrant Red
 
-[memory_usage]
-symbol = " "
-
-[nim]
-symbol = " "
-
-[nix_shell]
-symbol = " "
-
+# Disabling things we don't want
 [package]
-symbol = " "
+disabled = true
 
-[perl]
-symbol = " "
-
-[php]
-symbol = " "
-
-[ruby]
-symbol = " "
-
-[rust]
-symbol = " "
-
-[scala]
-symbol = " "
-
-[shlvl]
-symbol = " "
-
-[swift]
-symbol = "ﯣ "
+[gcloud]
+disabled = true
