@@ -42,6 +42,6 @@ ln -sf "$DOTFILES_DIR/config.toml" ~/.config/starship.toml
 
 # Setup Gemini Scripts
 mkdir -p ~/.gemini-scripts
-ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.zsh" ~/.gemini-scripts/gemini-functions.zsh
+ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gemini-functions.sh
 
 echo "✅ Dotfiles installation complete! Please run: source ~/.zshrc"
