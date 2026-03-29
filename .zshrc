@@ -46,6 +46,7 @@ source "/opt/homebrew/opt/fzf/shell/completion.zsh"
 source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
 
 # Internal Tooling Paths
+export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
 export PATH="$PATH:/Users/mattkorwel/.antigravity/antigravity/bin"
 
 # GCloud Shell Completion (Loaded from Mise-managed install)
