@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# git config
+# --- Git configuration ---
 git config --global alias.co "checkout"
 git config --global alias.br "branch"
 git config --global alias.ci "commit"
@@ -13,32 +13,35 @@ git config --global github.user "mattKorwel"
 git config --global push.default "simple"
 git config --global commit.gpgsign true
 
-# git completion
-curl -fLo ~/.zsh/git-completion.zsh --create-dirs https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.zsh
-
-# (in Codespaces VM associated with repo github/github only)
-echo "machine goproxy.githubapp.com login nobody password $GITHUB_TOKEN" >> $HOME/.netrc
-
-# links
-# delete existing .zshrc if it already exists
-if [[ -n "${HOME}/.zshrc" ]]; then
-  rm "${HOME}/.zshrc"
+# --- Tooling installation (macOS/Homebrew) ---
+if command -v brew &> /dev/null; then
+  echo "📡 Installing core tools via Homebrew..."
+  brew install starship mise zoxide fzf zsh-autosuggestions zsh-syntax-highlighting
+else
+  echo "⚠️ Homebrew not found. Please install it first: https://brew.sh"
 fi
 
-if [[ -d "${HOME}/.oh-my-zsh" ]]; then
-  rm -rf "${HOME}/.oh-my-zsh"  
+# --- Symlinks & Configuration ---
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "🔗 Setting up symlinks..."
+
+# Backup existing .zshrc if it's not a symlink
+if [[ -f ~/.zshrc && ! -L ~/.zshrc ]]; then
+  mv ~/.zshrc ~/.zshrc.bak.$(date +%F_%T)
 fi
+ln -sf "$DOTFILES_DIR/.zshrc" ~/.zshrc
 
-# links
-ln -sf /workspaces/.codespaces/.persistedshare/dotfiles/.zshrc ~/
-mkdir -p ~/.starship && ln -sf /workspaces/.codespaces/.persistedshare/dotfiles/config.toml ~/.starship
+# Setup Mise Config
+mkdir -p ~/.config/mise
+ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
 
-# zsh 
-if [ "$SHELL" != "/usr/bin/zsh" ]; then
-    sudo apt install -y zsh
-    sh -c "$(curl -fsSL https://starship.rs/install.sh)" -- --platform unknown-linux-musl --yes
-    sh -c " KEEP_ZSHRC=yes CHSH=no RUNZSH=no ZSH=$HOME/.oh-my-zsh $(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Setup Starship Config
+mkdir -p ~/.config
+ln -sf "$DOTFILES_DIR/config.toml" ~/.config/starship.toml
 
-    ZSH_SH="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
-    rm -rf ${ZSH_SH} && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_SH}
-fi
+# Setup Gemini Scripts
+mkdir -p ~/.gemini-scripts
+ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.zsh" ~/.gemini-scripts/gemini-functions.zsh
+
+echo "✅ Dotfiles installation complete! Please run: source ~/.zshrc"
