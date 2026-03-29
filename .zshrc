@@ -57,5 +57,5 @@ if [[ -d "$HOME/.local/share/mise/installs/gcloud" ]]; then
 fi
 
 # Load Gemini CLI Shortcuts & Functions
-[[ -f ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.zsh ]] && source ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.zsh
+[[ -f ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.sh ]] && source ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.sh
 

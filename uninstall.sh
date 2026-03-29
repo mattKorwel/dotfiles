@@ -6,7 +6,7 @@ echo "🗑 Cleaning up dotfiles symlinks..."
 rm -f ~/.zshrc
 rm -f ~/.config/mise/config.toml
 rm -f ~/.config/starship.toml
-rm -f ~/.gemini-scripts/gemini-functions.zsh
+rm -f ~/.gemini-scripts/gemini-functions.sh
 
 # Restore backup if it exists
 if [[ -f ~/.zshrc.bak.* ]]; then
