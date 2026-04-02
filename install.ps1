@@ -4,13 +4,12 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     break
 }
 $DOTFILES_DIR = $PSScriptRoot
-Write-Host "--- Starting Setup: AI Dev Spec (Sequim v4) ---" -ForegroundColor Green
+Write-Host "--- Starting Setup: AI Dev Spec (Sequim v4.1) ---" -ForegroundColor Green
 
 # --- 2. Winget Bootstrap (The Fix for 0x8a15005e) ---
 Write-Host "--- Bootstrapping Winget Engine ---" -ForegroundColor Yellow
 winget settings --enable BypassCertificatePinningForMicrosoftStore | Out-Null
 winget source reset --force | Out-Null
-# Force update to latest Winget to ensure --upgrade and registry-checking work
 winget install --id Microsoft.AppInstaller --silent --accept-package-agreements --accept-source-agreements
 # Refresh path immediately so current session sees new winget features
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
@@ -35,17 +34,19 @@ foreach ($Key in $RegistryKeys) {
     }
 }
 
-# --- 4. Core Tool Installation (State-Aware) ---
+# --- 4. Core Tool Installation (Corrected IDs) ---
 Write-Host "--- Syncing Developer Stack ---" -ForegroundColor Cyan
 $Apps = @(
     "Microsoft.PowerShell", "Google.Chrome", "Zen-Team.Zen-Browser", 
-    "starship.starship", "jdx.mise", "ajeetdsouza.zoxide", 
+    "starship.starship", 
+    "jdx.mise",             # <--- FIXED ID
+    "ajeetdsouza.zoxide", 
     "junegunn.fzf", "Microsoft.VisualStudioCode", "Docker.DockerDesktop", 
-    "GitHub.cli", "DEVCOM.JetBrainsMonoNerdFont"
+    "GitHub.cli",           # <--- FIXED ID
+    "DEVCOM.JetBrainsMonoNerdFont"
 )
 
 foreach ($App in $Apps) {
-    # Check if ALREADY installed via winget registry
     $check = winget list --id $App --exact -ErrorAction SilentlyContinue
     if ($check -match $App) {
         Write-Host "Check: $App is already installed." -ForegroundColor Gray
@@ -57,34 +58,35 @@ foreach ($App in $Apps) {
 
 # --- 5. Symlinks (Using Guard Logic) ---
 Write-Host "--- Linking Dotfiles & Terminal Settings ---" -ForegroundColor Yellow
-
 function New-SafeLink($LinkPath, $TargetPath) {
     if (Test-Path $LinkPath) {
         $item = Get-Item $LinkPath
-        if ($item.LinkType -eq "SymbolicLink") { return } # Skip if it's already a link
+        if ($item.LinkType -eq "SymbolicLink") { return } 
         Move-Item $LinkPath "$LinkPath.bak_$(Get-Date -f yyyyMMdd)" -Force
     }
     New-Item -ItemType SymbolicLink -Path $LinkPath -Target $TargetPath -Force | Out-Null
 }
 
-# Terminal Settings
 $TermSettings = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
 New-SafeLink $TermSettings "$DOTFILES_DIR\terminal-settings.json"
-
-# PowerShell Profiles (5.1 and 7)
 New-SafeLink $PROFILE "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
 $PS7_DIR = "$HOME\Documents\PowerShell"; if (!(Test-Path $PS7_DIR)) { mkdir $PS7_DIR | Out-Null }
 New-SafeLink "$PS7_DIR\Microsoft.PowerShell_profile.ps1" "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
 
-# --- 6. Runtimes & Gemini CLI ---
-Write-Host "--- Initializing Runtimes ---" -ForegroundColor Green
+# --- 6. Runtimes & Gemini CLI (The Real Test) ---
+Write-Host "--- Initializing Runtimes & Gemini CLI ---" -ForegroundColor Green
+# Critical: Refresh path again to find 'mise'
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
 if (Get-Command mise -ErrorAction SilentlyContinue) {
+    Write-Host "Mise found. Installing runtimes..." -ForegroundColor Gray
     & "mise" install 
     & "mise" reshim
+    # Installing the team tools
     npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
+} else {
+    Write-Error "Mise was not found in the path. Gemini CLI install skipped."
 }
 
-# Clean up security bypass
 winget settings --disable BypassCertificatePinningForMicrosoftStore | Out-Null
-
-Write-Host "--- Setup Complete! Run '. `$PROFILE' to activate Starship. ---" -ForegroundColor Green
+Write-Host "--- Setup Complete! Run '. `$PROFILE' to activate. ---" -ForegroundColor Green
