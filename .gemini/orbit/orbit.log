@@ -1,0 +1,10 @@
+[2026-03-30T14:41:12.011Z] INFO  [GENERAL]  🩺 Running Orbit Doctor...
+[2026-03-30T14:41:12.014Z] INFO  [GENERAL]     ✅ Disk usage verified for /Users/mattkorwel/dev/dotfiles/first
+[2026-03-30T14:41:12.014Z] INFO  [GENERAL]     ✅ Git worktree health verified.
+[2026-03-30T14:41:12.014Z] INFO  [GENERAL]  
+🚀 Launching Parallel review Worker...
+[2026-03-30T14:41:12.014Z] INFO  [GENERAL]     - Script: /Users/mattkorwel/dev/gemini-cli-orbit/main/bundle/station.js
+[2026-03-30T14:41:12.014Z] INFO  [GENERAL]     - Action: review
+[2026-03-30T14:41:12.069Z] ERROR [GENERAL]  ❌ Worker failed with exit code 1.
+[2026-03-30T14:41:12.070Z] INFO  [GENERAL]  
+✨ Orbit ready. Joining interactive session...

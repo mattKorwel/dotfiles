@@ -1,0 +1,9 @@
+{
+  "name": "dotfiles",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Building dotfiles...'",
+    "lint:all": "echo 'Linting all dotfiles...'",
+    "test": "echo 'Testing all dotfiles...'"
+  }
+}
