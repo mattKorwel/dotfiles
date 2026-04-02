@@ -85,24 +85,24 @@ $GEMINI_DIR = "$HOME\.gemini"
 if (-not (Test-Path $GEMINI_DIR)) { New-Item -ItemType Directory -Path $GEMINI_DIR -Force | Out-Null }
 New-SafeLink "$GEMINI_DIR\settings.json" "$DOTFILES_DIR\.gemini\settings.json"
 
-# Git Identity & GPG Auto-Gen
-if (Get-Command git -ErrorAction SilentlyContinue) {
+# 5c. Git Identity & GPG Auto-Gen (The "I/O Error" Fixes)
+if (Get-Command gpg -ErrorAction SilentlyContinue) {
+    # Force Git to use the standalone GnuPG, not the internal Git-bundled one
+    $GPG_PATH = (Get-Command gpg).Source
+    git config --global gpg.program "$GPG_PATH"
+    
     git config --global user.name "Matt Korwel"
     git config --global user.email "matt.korwel@gmail.com"
     git config --global include.path "C:/dev/dotfiles/.gitconfig.shared"
     git config --global core.symlinks true
 
-    # Create GPG key if it doesn't exist
     if (!(gpg --list-secret-keys 2>$null)) {
-        Write-Host "Generating GPG Key for matt.korwel@gmail.com..." -ForegroundColor Cyan
+        Write-Host "Generating GPG Key..." -ForegroundColor Cyan
         $batch = "Key-Type: RSA`nKey-Length: 4096`nName-Real: Matt Korwel`nName-Email: matt.korwel@gmail.com`nExpire-Date: 0`n%no-protection`n%commit"
-        $batchPath = Join-Path $env:TEMP "gpg_gen.txt"
-        $batch | Out-File $batchPath -Encoding utf8
-        gpg --batch --generate-key $batchPath
-        Remove-Item $batchPath
+        $batch | Out-File "$env:TEMP\gpg_gen.txt" -Encoding utf8
+        gpg --batch --generate-key "$env:TEMP\gpg_gen.txt"
     }
 
-    # Extract ID and link to Git
     $keyId = (gpg --list-secret-keys --keyid-format=LONG | Select-String "sec" | ForEach-Object { ($_ -split '/')[1] -split ' ' | Select-Object -First 1 })
     if ($keyId) {
         git config --global user.signingkey $keyId
