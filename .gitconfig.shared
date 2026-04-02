@@ -22,3 +22,11 @@
 	pruneTags = true
 [safe]
 	directory = *
+[user]
+    name = Matt Korwel
+    email = matt.korwel@gmail.com
+    signingkey = B498A918A6BCB1D8
+[gpg]
+    program = C:/Program Files/GnuPG/bin/gpg.exe
+[tag]
+    gpgSign = true
