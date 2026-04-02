@@ -1,71 +1,101 @@
 # --- Environment & Tools ---
+
+# 1. Mise (Fixed for PS 7.6 string handling)
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     Invoke-Expression (& mise activate pwsh | Out-String)
 }
 
+# 2. Starship (Fixed: Always use 'powershell' to avoid the 'pwsh not supported' error)
 if (Get-Command starship -ErrorAction SilentlyContinue) {
-    # Check if we are running in pwsh (PowerShell 6+) or powershell (5.1)
-    if ($PSVersionTable.PSVersion.Major -ge 6) {
-        Invoke-Expression (&starship init pwsh)
-    } else {
-        Invoke-Expression (&starship init powershell)
-    }
+    # Starship's 'pwsh' init is currently broken in some versions; 'powershell' works for both.
+    Invoke-Expression (& starship init powershell | Out-String)
 }
 
+# 3. Zoxide
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&zoxide init powershell)
+    Invoke-Expression (& zoxide init powershell | Out-String)
 }
 
 # --- Shell Enhancements (Predictive IntelliSense) ---
 if (Get-Module -ListAvailable PSReadLine) {
+    Import-Module PSReadLine
+    Set-PSReadLineOption -EditMode Vi
+    
     # Enable Predictive IntelliSense (Ghost Text) from history
     Set-PSReadLineOption -PredictionSource History
-
-    # Optional: Set view to 'InlineView' (ghost text) - default
     Set-PSReadLineOption -PredictionView InlineView
 
     # Set F2 to toggle between InlineView and ListView
-    Set-PSReadLineKeyHandler -Key F2 -Function NextViMode
+    # FIX: NextViMode was removed. We use SwitchPredictionView for modern PSReadLine.
+    Set-PSReadLineKeyHandler -Key F2 -Function SwitchPredictionView
+    
+    # Standard Vi Escape
+    Set-PSReadLineKeyHandler -Key "Escape" -Function ViCommandMode
 }
 
 # --- General Aliases ---
 function gadd([string]$msg) {
+    if (-not $msg) { $msg = "chore: update" }
     git add -A
     git commit -m "$msg"
     git push -u origin HEAD
 }
 
-function ls { Get-ChildItem @args }
-function ll { Get-ChildItem -Force @args }
+# Safe wrappers for common commands
 function grep { Select-String @args }
+
+# --- Unix Compatibility ---
+Set-Alias -Name which -Value Get-Command
+Set-Alias -Name export -Value Set-Variable
+
+# Shortcuts for the 'll' you are used to
+function la { Get-ChildItem -Args $args -Force } 
+function l { Get-ChildItem -Args $args }
+
+# Quick Directory Navigation
+function .. { Set-Location .. }
+function ... { Set-Location ..\.. }
+function .... { Set-Location ..\..\.. }
+
+# Port Checking (Crucial for Dev)
+# Usage: 'lport 3000' to see what's hanging on a port
+function lport([int]$port) {
+    Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | 
+    Select-Object LocalPort, OwningProcess, State
+}
+
+# The "Clear" Shortcut
+function cls { Clear-Host }
 
 # --- Gemini CLI Version Manager (High Performance) ---
 
-# Mise handles the main 'gemini' path in ~/.config/mise/config.toml
-# These functions provide isolated access to other channels.
-function gnightly { & "$HOME\.gcli\nightly\node_modules\.bin\gemini.ps1" @args }
-function gstable  { & "$HOME\.gcli\stable\node_modules\.bin\gemini.ps1" @args }
-function gpreview { & "$HOME\.gcli\preview\node_modules\.bin\gemini.ps1" @args }
+# Note: Using Join-Path for cleaner Windows path handling
+function gnightly { & (Join-Path $HOME ".gcli\nightly\node_modules\.bin\gemini.ps1") @args }
+function gstable   { & (Join-Path $HOME ".gcli\stable\node_modules\.bin\gemini.ps1") @args }
+function gpreview  { & (Join-Path $HOME ".gcli\preview\node_modules\.bin\gemini.ps1") @args }
 
 function gupdate-all {
     Write-Host "📡 Updating Gemini CLI versions..." -ForegroundColor Cyan
     
-    $dirs = "$HOME\.gcli\main", "$HOME\.gcli\nightly", "$HOME\.gcli\stable", "$HOME\.gcli\preview"
-    foreach ($dir in $dirs) {
-        if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force }
+    $baseDir = Join-Path $HOME ".gcli"
+    $channels = "main", "nightly", "stable", "preview"
+    
+    foreach ($ch in $channels) {
+        $path = Join-Path $baseDir $ch
+        if (-not (Test-Path $path)) { New-Item -ItemType Directory -Path $path -Force | Out-Null }
     }
 
     Write-Host "📡 Refreshing 'gemini' (GitHub main branch)..."
-    npm install --prefix "$HOME\.gcli\main" https://github.com/google-gemini/gemini-cli#main
+    npm install --prefix (Join-Path $baseDir "main") https://github.com/google-gemini/gemini-cli#main
     
     Write-Host "📡 Refreshing 'gnightly' (npm @nightly)..."
-    npm install --prefix "$HOME\.gcli\nightly" @google/gemini-cli@nightly
+    npm install --prefix (Join-Path $baseDir "nightly") @google/gemini-cli@nightly
     
     Write-Host "📡 Refreshing 'gstable' (npm @latest)..."
-    npm install --prefix "$HOME\.gcli\stable" @google/gemini-cli@latest
+    npm install --prefix (Join-Path $baseDir "stable") @google/gemini-cli@latest
     
     Write-Host "📡 Refreshing 'gpreview' (npm @preview)..."
-    npm install --prefix "$HOME\.gcli\preview" @google/gemini-cli@preview
+    npm install --prefix (Join-Path $baseDir "preview") @google/gemini-cli@preview
     
     if (Get-Command mise -ErrorAction SilentlyContinue) { mise reshim }
     
