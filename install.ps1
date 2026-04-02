@@ -1,30 +1,21 @@
-# --- 1. Admin & Elevation Check ---
+# --- 1. Admin & Compatibility Check ---
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Error "Please run this script as Administrator (Right-click Terminal > Run as Admin)!"
+    Write-Error "Please run this script as Administrator!"
     break
 }
 
-$DOTFILES_DIR = $PSScriptRoot
-Write-Host "🚀 Starting Master Setup: AI Dev Spec..." -ForegroundColor Green
+# Check version for logging
+$isLegacy = $PSVersionTable.PSVersion.Major -le 5
+Write-Host "--- Starting Setup (Detected PS Version: $($PSVersionTable.PSVersion)) ---" -ForegroundColor Green
 
-# --- 2. OS Hardening (The 'Sequim Scrub') ---
-Write-Host "🛡️  Hardening Windows Registry..." -ForegroundColor Yellow
+# --- 2. OS Hardening (Registry Level) ---
+Write-Host "--- Hardening Windows Registry ---" -ForegroundColor Yellow
 $RegistryKeys = @(
-    # AI Privacy & Recall
     @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows AI"; Name = "DisableAIDataAnalysis"; Value = 1 },
-    # Edge Bloat & Copilot
     @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"; Name = "EdgeShoppingAssistantEnabled"; Value = 0 },
     @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"; Name = "EdgeCopilotEnabled"; Value = 0 },
     @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"; Name = "HubsSidebarEnabled"; Value = 0 },
-    # Consumer Junk
-    @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"; Name = "DisableWindowsConsumerFeatures"; Value = 1 },
-    # Start Menu Web Search (Bing)
-    @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"; Name = "ConnectedSearchUseWeb"; Value = 0 },
-    @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"; Name = "DisableWebSearch"; Value = 1 },
-    # Background Processes & Telemetry
-    @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy"; Name = "LetAppsRunInBackground"; Value = 2 },
-    @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"; Name = "AllowTelemetry"; Value = 0 },
-    @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "TaskbarDa"; Value = 0 }
+    @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"; Name = "DisableWindowsConsumerFeatures"; Value = 1 }
 )
 
 foreach ($Key in $RegistryKeys) {
@@ -32,17 +23,11 @@ foreach ($Key in $RegistryKeys) {
     Set-ItemProperty -Path $Key.Path -Name $Key.Name -Value $Key.Value
 }
 
-# --- 3. Purge Bloat (Edge & Recall) ---
-Write-Host "🚫 Purging Edge & Recall..." -ForegroundColor Red
-DISM /Online /Disable-Feature /FeatureName:Recall /NoRestart /Quiet | Out-Null
-
-$EdgePath = Get-ChildItem "C:\Program Files (x86)\Microsoft\Edge\Application\1*\Installer\setup.exe" | Select-Object -ExpandProperty FullName -First 1
-if ($EdgePath) { Start-Process -FilePath $EdgePath -ArgumentList "--uninstall --system-level --verbose-logging --force-uninstall" -Wait }
-
-# --- 4. Core Tool Installation ---
-Write-Host "📡 Installing Developer Stack & Browsers..." -ForegroundColor Cyan
+# --- 3. Core Tool Installation (Crucial: Installs PS7 first) ---
+Write-Host "--- Installing Developer Stack ---" -ForegroundColor Cyan
+# We force install PowerShell 7 immediately so it's available for the rest of the script
 $Apps = @(
-    "Microsoft.PowerShell",
+    "Microsoft.PowerShell",     # This is PowerShell 7
     "Google.Chrome",
     "Zen-Team.Zen-Browser",
     "starship.starship",
@@ -51,57 +36,62 @@ $Apps = @(
     "junegunn.fzf",
     "Microsoft.VisualStudioCode",
     "Docker.DockerDesktop",
-    "Microsoft.GitHubCLI",
-    "Microsoft.WSL"
+    "Microsoft.GitHubCLI"
 )
 
 foreach ($App in $Apps) {
-    $Id = if ($App -eq "Microsoft.GitHubCLI") { "gh" } else { $App.Split('.')[-1] }
-    if (-not (Get-Command $Id -ErrorAction SilentlyContinue)) {
-        winget install --id $App --silent --accept-package-agreements --accept-source-agreements --upgrade
+    Write-Host "Checking $App..." -ForegroundColor Gray
+    winget install --id $App --silent --accept-package-agreements --accept-source-agreements --upgrade
+}
+
+# --- 4. Make PowerShell 7 the Default Terminal Profile ---
+Write-Host "--- Setting PowerShell 7 as Default Profile ---" -ForegroundColor Yellow
+$SettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+if (Test-Path $SettingsPath) {
+    $settings = Get-Content $SettingsPath | ConvertFrom-Json
+    # Find the GUID for PowerShell 7 (pwsh.exe)
+    $pwshProfile = $settings.profiles.list | Where-Object { $_.commandline -like "*pwsh.exe*" -or $_.name -eq "PowerShell" }
+    if ($pwshProfile) {
+        $settings.defaultProfile = $pwshProfile.guid
+        $settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath
+        Write-Host "Success: PowerShell 7 is now your default terminal." -ForegroundColor Green
     }
 }
 
-# --- 5. Docker 'No-Start' Fix ---
-Write-Host "🐋 Configuring Docker (Disabling Auto-Start)..." -ForegroundColor Yellow
-$DockerSettings = "$env:APPDATA\Docker\settings.json"
-if (Test-Path $DockerSettings) {
-    $json = Get-Content $DockerSettings | ConvertFrom-Json
-    $json.autoStart = $false
-    $json | ConvertTo-Json | Set-Content $DockerSettings
-}
-# Remove the Windows startup shortcut just in case
-$StartupLink = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Docker Desktop.lnk"
-if (Test-Path $StartupLink) { Remove-Item $StartupLink -Force }
+# --- 5. Purge Bloat (Edge & Recall) ---
+Write-Host "--- Purging Edge & Recall ---" -ForegroundColor Red
+DISM /Online /Disable-Feature /FeatureName:Recall /NoRestart /Quiet | Out-Null
+$EdgePath = Get-ChildItem "C:\Program Files (x86)\Microsoft\Edge\Application\1*\Installer\setup.exe" | Select-Object -ExpandProperty FullName -First 1
+if ($EdgePath) { Start-Process -FilePath $EdgePath -ArgumentList "--uninstall --system-level --force-uninstall" -Wait }
 
-# --- 6. Re-enable AI & Virtualization (Force Access) ---
-Write-Host "🏗️  Ensuring NPU & WSL2 are active..." -ForegroundColor Green
+# --- 6. Re-enable AI & Virtualization ---
+Write-Host "--- Ensuring NPU & WSL2 are active ---" -ForegroundColor Green
 dism /online /enable-feature /featurename:PlatformAI /all /NoRestart | Out-Null
 dism /online /enable-feature /featurename:VirtualMachinePlatform /all /NoRestart | Out-Null
 dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /NoRestart | Out-Null
 
-# --- 7. Symlinks & Git Configuration ---
-Write-Host "🔗 Linking Dotfiles & Shared Git Config..." -ForegroundColor Cyan
-if (Test-Path $PROFILE) { Move-Item $PROFILE "$PROFILE.bak_$(Get-Date -f yyyyMMdd_HHmm)" }
+# --- 7. Symlinks (Handling both 5.1 and 7 profiles) ---
+Write-Host "--- Linking Dotfiles ---" -ForegroundColor Cyan
+$DOTFILES_DIR = $PSScriptRoot
+
+# Link legacy 5.1 profile
+if (Test-Path $PROFILE) { Move-Item $PROFILE "$PROFILE.bak_$(Get-Date -f yyyyMMdd)" }
 New-Item -ItemType SymbolicLink -Path $PROFILE -Target "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1" -Force
 
-# Git Include Strategy
-$SHARED_PATH_GIT = "$($DOTFILES_DIR.Replace('\', '/'))/.gitconfig.shared"
-git config --global --add include.path "$SHARED_PATH_GIT"
+# Link modern 7.x profile (different path)
+$PS7_PROFILE_DIR = "$HOME\Documents\PowerShell"
+if (!(Test-Path $PS7_PROFILE_DIR)) { New-Item -ItemType Directory -Path $PS7_PROFILE_DIR -Force | Out-Null }
+$PS7_PROFILE_PATH = "$PS7_PROFILE_DIR\Microsoft.PowerShell_profile.ps1"
+if (Test-Path $PS7_PROFILE_PATH) { Move-Item $PS7_PROFILE_PATH "$PS7_PROFILE_PATH.bak" }
+New-Item -ItemType SymbolicLink -Path $PS7_PROFILE_PATH -Target "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1" -Force
 
-# Mise Config link
-$MISE_CFG = "$HOME\.config\mise"
-if (!(Test-Path $MISE_CFG)) { New-Item -ItemType Directory -Path $MISE_CFG -Force | Out-Null }
-New-Item -ItemType SymbolicLink -Path "$MISE_CFG\config.toml" -Target "$DOTFILES_DIR\.config\mise\config.toml" -Force
-
-# --- 8. Gemini CLI & Runtimes ---
-Write-Host "🛠️  Initializing Mise & Gemini Nightly..." -ForegroundColor Cyan
+# --- 8. Final Runtimes ---
+Write-Host "--- Initializing Runtimes ---" -ForegroundColor Cyan
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     & "mise" install 
-    & "mise" reshim
     npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
 }
 
-Write-Host "`n✅ Setup Complete! Restart required for hardware changes." -ForegroundColor Green
+Write-Host "--- Setup Complete! PowerShell 7 is installed and set as default. ---" -ForegroundColor Green
+Write-Host "Please close this window and open a NEW Terminal to see the changes." -ForegroundColor Yellow
