@@ -4,7 +4,7 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     break
 }
 $DOTFILES_DIR = $PSScriptRoot
-Write-Host "--- Starting Setup: AI Dev Spec (Sequim v4.1) ---" -ForegroundColor Green
+Write-Host "--- Starting Setup: AI Dev Spec (Sequim v5.7) ---" -ForegroundColor Green
 
 # --- 2. Winget Bootstrap (The Fix for 0x8a15005e) ---
 Write-Host "--- Bootstrapping Winget Engine ---" -ForegroundColor Yellow
@@ -37,13 +37,13 @@ foreach ($Key in $RegistryKeys) {
 # --- 4. Core Tool Installation (Corrected IDs) ---
 Write-Host "--- Syncing Developer Stack ---" -ForegroundColor Cyan
 $Apps = @(
-    "Microsoft.PowerShell", "Google.Chrome", "Zen-Team.Zen-Browser", 
+    "Microsoft.PowerShell", "Git.Git", "Google.Chrome", "Zen-Team.Zen-Browser", 
     "starship.starship", 
     "jdx.mise",             # <--- FIXED ID
     "ajeetdsouza.zoxide", 
     "junegunn.fzf", "Microsoft.VisualStudioCode", "Docker.DockerDesktop", 
     "GitHub.cli",           # <--- FIXED ID
-    "DEVCOM.JetBrainsMonoNerdFont"
+    "DEVCOM.JetBrainsMonoNerdFont", "GnuPG.GnuPG"
 )
 
 foreach ($App in $Apps) {
@@ -56,41 +56,78 @@ foreach ($App in $Apps) {
     }
 }
 
-# --- 5. Symlinks (Using Guard Logic) ---
-Write-Host "--- Linking Dotfiles & Terminal Settings ---" -ForegroundColor Yellow
+# --- 5. Symlinks & Git/GPG Logic ---
+Write-Host "--- Linking Dotfiles & Configuring Git/GPG ---" -ForegroundColor Yellow
 function New-SafeLink($LinkPath, $TargetPath) {
     if (Test-Path $LinkPath) {
         $item = Get-Item $LinkPath
         if ($item.LinkType -eq "SymbolicLink") { return } 
-        Move-Item $LinkPath "$LinkPath.bak_$(Get-Date -f yyyyMMdd)" -Force
+        Move-Item $LinkPath "$LinkPath.bak_$(Get-Date -f yyyyMMdd)" -Force -ErrorAction SilentlyContinue
     }
+    # Ensure parent directory exists (critical for fresh installs)
+    $parent = Split-Path $LinkPath
+    if (!(Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
     New-Item -ItemType SymbolicLink -Path $LinkPath -Target $TargetPath -Force | Out-Null
 }
 
+# Profile & Terminal Links
 $TermSettings = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
 New-SafeLink $TermSettings "$DOTFILES_DIR\terminal-settings.json"
 New-SafeLink $PROFILE "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
 $PS7_DIR = "$HOME\Documents\PowerShell"; if (!(Test-Path $PS7_DIR)) { mkdir $PS7_DIR | Out-Null }
 New-SafeLink "$PS7_DIR\Microsoft.PowerShell_profile.ps1" "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
+# Mise Global Config (Maps your dotfiles version to the Windows AppData path)
+$MiseConfigPath = Join-Path $env:APPDATA "mise\config.toml"
+New-SafeLink $MiseConfigPath "$DOTFILES_DIR\.config\mise\config.toml"
 
 # Gemini Settings
 $GEMINI_DIR = "$HOME\.gemini"
 if (-not (Test-Path $GEMINI_DIR)) { New-Item -ItemType Directory -Path $GEMINI_DIR -Force | Out-Null }
 New-SafeLink "$GEMINI_DIR\settings.json" "$DOTFILES_DIR\.gemini\settings.json"
 
+# Git Identity & GPG Auto-Gen
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    git config --global user.name "Matt Korwel"
+    git config --global user.email "matt.korwel@gmail.com"
+    git config --global include.path "C:/dev/dotfiles/.gitconfig.shared"
+    git config --global core.symlinks true
+
+    # Create GPG key if it doesn't exist
+    if (!(gpg --list-secret-keys 2>$null)) {
+        Write-Host "Generating GPG Key for matt.korwel@gmail.com..." -ForegroundColor Cyan
+        $batch = "Key-Type: RSA`nKey-Length: 4096`nName-Real: Matt Korwel`nName-Email: matt.korwel@gmail.com`nExpire-Date: 0`n%no-protection`n%commit"
+        $batchPath = Join-Path $env:TEMP "gpg_gen.txt"
+        $batch | Out-File $batchPath -Encoding utf8
+        gpg --batch --generate-key $batchPath
+        Remove-Item $batchPath
+    }
+
+    # Extract ID and link to Git
+    $keyId = (gpg --list-secret-keys --keyid-format=LONG | Select-String "sec" | ForEach-Object { ($_ -split '/')[1] -split ' ' | Select-Object -First 1 })
+    if ($keyId) {
+        git config --global user.signingkey $keyId
+        git config --global commit.gpgsign true
+    }
+}
+
 # --- 6. Runtimes & Gemini CLI (The Real Test) ---
 Write-Host "--- Initializing Runtimes & Gemini CLI ---" -ForegroundColor Green
-# Critical: Refresh path again to find 'mise'
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     Write-Host "Mise found. Installing runtimes..." -ForegroundColor Gray
+    & "mise" trust
     & "mise" install 
     & "mise" reshim
-    # Installing the team tools
-    npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
+    # Use mise exec to ensure node/npm is in path for the global install
+    & "mise" exec -- -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
 } else {
     Write-Error "Mise was not found in the path. Gemini CLI install skipped."
+}
+
+# OneDrive "Not Digitally Signed" Fix
+if ((Get-ExecutionPolicy) -ne 'Bypass') {
+    Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force -ErrorAction SilentlyContinue
 }
 
 winget settings --disable BypassCertificatePinningForMicrosoftStore | Out-Null

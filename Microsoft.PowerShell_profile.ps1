@@ -1,3 +1,5 @@
+Set-Location "C:\dev"
+
 # --- Environment & Tools ---
 
 # 1. Mise (Fixed for PS 7.6 string handling)
@@ -46,16 +48,58 @@ function grep { Select-String @args }
 
 # --- Unix Compatibility ---
 Set-Alias -Name which -Value Get-Command
-Set-Alias -Name export -Value Set-Variable
 
 # Shortcuts for the 'll' you are used to
 function la { Get-ChildItem -Args $args -Force } 
 function l { Get-ChildItem -Args $args }
 
-# Quick Directory Navigation
+# --- Navigation ---
 function .. { Set-Location .. }
 function ... { Set-Location ..\.. }
 function .... { Set-Location ..\..\.. }
+Set-Alias -Name which -Value Get-Command
+
+# --- File Manipulation (Unix-style) ---
+# The 'rm -rf' equivalent
+function rmrf {
+    param([Parameter(ValueFromRemainingArguments=$true)]$Path)
+    Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+# The 'mkdir -p' equivalent
+function mkp {
+    param([Parameter(ValueFromRemainingArguments=$true)]$Path)
+    New-Item -ItemType Directory -Path $Path -Force | Out-Null
+}
+
+# The 'touch' equivalent
+function touch {
+    param([Parameter(ValueFromRemainingArguments=$true)]$Path)
+    New-Item -ItemType File -Path $Path -Force | Out-Null
+}
+
+# --- Search & View ---
+# PowerShell's 'ls' is okay, but 'grep' needs a real alias
+if (Get-Command Select-String -ErrorAction SilentlyContinue) {
+    Set-Alias -Name grep -Value Select-String
+}
+
+# --- Process Management ---
+# Equivalent to 'pkill -f'
+function pkill {
+    param([string]$name)
+    Get-Process -Name $name -ErrorAction SilentlyContinue | Stop-Process -Force
+}
+
+# --- Environment ---
+# Allows 'export VAR=value' syntax
+function export {
+    param([string]$assignment)
+    if ($assignment -like "*=*") {
+        $name, $value = $assignment -split '=', 2
+        Set-Variable -Name $name -Value $value -Scope Global
+    }
+}
 
 # Port Checking (Crucial for Dev)
 # Usage: 'lport 3000' to see what's hanging on a port

@@ -64,7 +64,9 @@
         {
             "font": 
             {
-                "face": "JetBrainsMono NF"
+                "cellHeight": "1.1",
+                "face": "JetBrainsMono Nerd Font Mono",
+                "size": 9
             }
         },
         "list": 
