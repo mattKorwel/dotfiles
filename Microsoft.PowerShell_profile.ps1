@@ -1,14 +1,37 @@
-# --- Starship & Shell Enhancements ---
-if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&starship init pwsh)
+# --- Environment & Tools ---
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& mise activate pwsh | Out-String)
 }
+
+if (Get-Command starship -ErrorAction SilentlyContinue) {
+    # Check if we are running in pwsh (PowerShell 6+) or powershell (5.1)
+    if ($PSVersionTable.PSVersion.Major -ge 6) {
+        Invoke-Expression (&starship init pwsh)
+    } else {
+        Invoke-Expression (&starship init powershell)
+    }
+}
+
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (&zoxide init powershell)
 }
 
+# --- Shell Enhancements (Predictive IntelliSense) ---
+if (Get-Module -ListAvailable PSReadLine) {
+    # Enable Predictive IntelliSense (Ghost Text) from history
+    Set-PSReadLineOption -PredictionSource History
+
+    # Optional: Set view to 'InlineView' (ghost text) - default
+    Set-PSReadLineOption -PredictionView InlineView
+
+    # Set F2 to toggle between InlineView and ListView
+    Set-PSReadLineKeyHandler -Key F2 -Function NextViMode
+}
+
 # --- General Aliases ---
 function gadd([string]$msg) {
-    git ci -am "$msg"
+    git add -A
+    git commit -m "$msg"
     git push -u origin HEAD
 }
 
