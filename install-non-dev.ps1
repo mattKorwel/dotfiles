@@ -33,8 +33,8 @@ Write-Host "--- Purging Edge, Recall, and Chrome ---" -ForegroundColor Red
 DISM /Online /Disable-Feature /FeatureName:Recall /NoRestart /Quiet | Out-Null
 
 # Uninstall Chrome (both User and System scopes)
-winget uninstall --id Google.Chrome --scope user --silent -ErrorAction SilentlyContinue
-winget uninstall --id Google.Chrome --scope machine --silent -ErrorAction SilentlyContinue
+winget uninstall --id Google.Chrome --scope user --silent 2>$null
+winget uninstall --id Google.Chrome --scope machine --silent 2>$null
 
 # Uninstall Edge if installer is found
 $EdgeSetup = Get-ChildItem "C:\Program Files (x86)\Microsoft\Edge\Application\1*\Installer\setup.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -First 1
@@ -48,7 +48,7 @@ winget install --id Zen-Team.Zen-Browser --silent --accept-package-agreements --
 Write-Host "--- Wiping Dev Baggage ---" -ForegroundColor Gray
 $PurgeList = @("Docker.DockerDesktop", "Microsoft.VisualStudioCode", "jdx.mise", "GitHub.cli", "Microsoft.PowerShell", "starship.starship")
 foreach ($App in $PurgeList) {
-    winget uninstall --id $App --silent -ErrorAction SilentlyContinue
+    winget uninstall --id $App --silent 2>$null
 }
 
 # Delete the dev folder and local profiles
