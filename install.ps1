@@ -1,11 +1,11 @@
 # PowerShell script to install dotfiles on Windows
 
 Write-Host "📡 Installing core tools via Winget..." -ForegroundColor Cyan
-winget install Microsoft.PowerShell --source winget
-winget install starship.starship --source winget
-winget install jschmid1.mise --source winget
-winget install ajeetdsouza.zoxide --source winget
-winget install junegunn.fzf --source winget
+# Checking for existing tools before calling winget to avoid noise
+if (-not (Get-Command "starship" -ErrorAction SilentlyContinue)) { winget install starship.starship --source winget }
+if (-not (Get-Command "mise" -ErrorAction SilentlyContinue)) { winget install jschmid1.mise --source winget }
+if (-not (Get-Command "zoxide" -ErrorAction SilentlyContinue)) { winget install ajeetdsouza.zoxide --source winget }
+if (-not (Get-Command "fzf" -ErrorAction SilentlyContinue)) { winget install junegunn.fzf --source winget }
 
 $DOTFILES_DIR = $PSScriptRoot
 $PROFILE_DIR = Split-Path -Parent $PROFILE
@@ -19,6 +19,20 @@ if (Test-Path $PROFILE -PathType Leaf) {
     Move-Item $PROFILE "$PROFILE.bak_$date"
 }
 New-Item -ItemType SymbolicLink -Path $PROFILE -Target "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1" -Force
+
+# Git Configuration (Using Include strategy)
+$GITCONFIG = "$HOME\.gitconfig"
+if (-not (Test-Path $GITCONFIG)) { New-Item -ItemType File -Path $GITCONFIG }
+
+$SHARED_PATH = "$DOTFILES_DIR\.gitconfig.shared"
+# Replace backslashes with forward slashes for Git config compatibility
+$SHARED_PATH_GIT = $SHARED_PATH.Replace("\", "/")
+
+$included = git config --global --get-all include.path | Select-String -Pattern ".gitconfig.shared"
+if (-not $included) {
+    Write-Host "📝 Including shared git config in ~/.gitconfig..." -ForegroundColor Cyan
+    git config --global --add include.path "$SHARED_PATH_GIT"
+}
 
 # Link Mise Config
 $MISE_CONFIG_DIR = "$HOME\.config\mise"

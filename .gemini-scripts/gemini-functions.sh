@@ -66,3 +66,59 @@ function gupdate-all() {
   
   echo "\n✅ All versions updated! Use 'gemini', 'gnightly', 'gstable', or 'gpreview'."
 }
+
+# Prunes all git worktrees except the main one for a given repo path.
+# Uses 'git-common-dir' to ensure we find the owner repo.
+# Usage: gcleanup-worktrees [repo_path] [--force]
+function gcleanup-worktrees() {
+  local target_dir="${1:-.}"
+  local force=false
+  
+  if [[ "$1" == "--force" ]] || [[ "$2" == "--force" ]]; then
+    force=true
+    if [[ "$1" == "--force" ]]; then target_dir="${2:-.}"; fi
+  fi
+
+  # Resolve absolute path for the target
+  local abs_target=$(cd "$target_dir" &>/dev/null && pwd)
+  if [[ -z "$abs_target" ]]; then
+    echo "❌ Error: Directory '$target_dir' not found."
+    return 1
+  fi
+
+  if ! git -C "$abs_target" rev-parse --is-inside-work-tree &>/dev/null; then
+    echo "❌ Error: '$abs_target' is not a git repository."
+    return 1
+  fi
+
+  # Identify the "Main" directory that owns the worktrees
+  local common_dir=$(git -C "$abs_target" rev-parse --git-common-dir)
+  local main_dir
+  if [[ "$common_dir" == ".git" ]]; then
+    main_dir=$(git -C "$abs_target" rev-parse --show-toplevel)
+  else
+    # In a worktree, common-dir is something like /path/to/main/.git/worktrees/name
+    main_dir=$(cd "$abs_target" && cd "$common_dir/../.." && pwd)
+  fi
+
+  echo "🧹 Pruning sibling worktrees for: $main_dir"
+  
+  # Get all worktree paths from the source of truth
+  local worktrees=($(git -C "$main_dir" worktree list --porcelain | grep "^worktree " | cut -d' ' -f2))
+  
+  local count=0
+  for wt in "${worktrees[@]}"; do
+    # Skip the main working tree
+    if [[ "$wt" == "$main_dir" ]]; then continue; fi
+    
+    echo "🔥 Removing: $wt"
+    if [[ "$force" == true ]]; then
+      git -C "$main_dir" worktree remove "$wt" --force
+    else
+      git -C "$main_dir" worktree remove "$wt"
+    fi
+    ((count++))
+  done
+
+  echo "✅ Complete. $count worktrees removed."
+}

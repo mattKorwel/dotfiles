@@ -59,3 +59,23 @@ fi
 # Load Gemini CLI Shortcuts & Functions
 [[ -f ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.sh ]] && source ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.sh
 
+# Gemini Orbit Shell Integration
+alias orbit='node "/Users/mattkorwel/dev/gemini-cli-orbit/main/bundle/orbit-cli.js"'
+_orbit() {
+  local -a commands
+  commands=(
+    'ci:Monitor CI status for a branch with noise filtering.'
+    'install-shell:Install Orbit shell aliases and tab-completion.'
+    'jettison:Decommission a specific mission and its worktree.'
+    'liftoff:Build or wake infrastructure (use --with-station).'
+    'mission:Start, resume, or perform maneuvers on a PR mission.'
+    'pulse:Check station health and active mission status.'
+    'schematic:Manage infrastructure blueprints: <list|create|edit|import>'
+    'splashdown:Emergency shutdown of all active remote capsules.'
+    'station:Hardware control: <activate|list|liftoff|delete>'
+    'uplink:Inspect local or remote mission telemetry.'
+  )
+  _describe 'orbit' commands
+}
+compdef _orbit orbit
+# End Gemini Orbit Shell Integration

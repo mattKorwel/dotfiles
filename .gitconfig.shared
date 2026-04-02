@@ -1,0 +1,24 @@
+[alias]
+	co = checkout
+	br = branch
+	ci = commit
+	st = status
+	rever = revert
+[remote "origin"]
+	prune = true
+[pull]
+	rebase = true
+[github]
+	user = mattKorwel
+[push]
+	default = simple
+	autoSetupRemote = true
+[commit]
+	gpgsign = true
+[core]
+	editor = nano
+[fetch]
+	prune = true
+	pruneTags = true
+[safe]
+	directory = *
