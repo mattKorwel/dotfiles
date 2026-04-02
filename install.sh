@@ -41,7 +41,14 @@ ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
 mkdir -p ~/.config
 ln -sf "$DOTFILES_DIR/config.toml" ~/.config/starship.toml
 
-# 4. Gemini Scripts
+# 4. Gemini Configuration
+mkdir -p ~/.gemini
+if [[ -f ~/.gemini/settings.json && ! -L ~/.gemini/settings.json ]]; then
+  mv ~/.gemini/settings.json ~/.gemini/settings.json.bak.$(date +%F_%T)
+fi
+ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
+
+# 5. Gemini Scripts
 mkdir -p ~/.gemini-scripts
 ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gemini-functions.sh
 

@@ -73,6 +73,11 @@ New-SafeLink $PROFILE "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
 $PS7_DIR = "$HOME\Documents\PowerShell"; if (!(Test-Path $PS7_DIR)) { mkdir $PS7_DIR | Out-Null }
 New-SafeLink "$PS7_DIR\Microsoft.PowerShell_profile.ps1" "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
 
+# Gemini Settings
+$GEMINI_DIR = "$HOME\.gemini"
+if (-not (Test-Path $GEMINI_DIR)) { New-Item -ItemType Directory -Path $GEMINI_DIR -Force | Out-Null }
+New-SafeLink "$GEMINI_DIR\settings.json" "$DOTFILES_DIR\.gemini\settings.json"
+
 # --- 6. Runtimes & Gemini CLI (The Real Test) ---
 Write-Host "--- Initializing Runtimes & Gemini CLI ---" -ForegroundColor Green
 # Critical: Refresh path again to find 'mise'
