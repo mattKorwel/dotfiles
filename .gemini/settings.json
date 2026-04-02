@@ -38,7 +38,7 @@
     "errorVerbosity": "full"
   },
   "general": {
-    "preferredEditor": "antigravity",
+    "preferredEditor": "code",
     "vimMode": false,
     "previewFeatures": true,
     "enableAutoUpdate": false,
