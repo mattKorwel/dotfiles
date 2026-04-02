@@ -36,7 +36,8 @@ $Apps = @(
     "junegunn.fzf",
     "Microsoft.VisualStudioCode",
     "Docker.DockerDesktop",
-    "Microsoft.GitHubCLI"
+    "Microsoft.GitHubCLI",
+    "DEVCOM.JetBrainsMonoNerdFont"
 )
 
 foreach ($App in $Apps) {
@@ -44,33 +45,46 @@ foreach ($App in $Apps) {
     winget install --id $App --silent --accept-package-agreements --accept-source-agreements --upgrade
 }
 
-# --- 4. Make PowerShell 7 the Default Terminal Profile ---
+# --- 4. Symlink Windows Terminal Settings ---
+Write-Host "--- Linking Windows Terminal Settings ---" -ForegroundColor Yellow
+$TerminalSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+$RepoSettingsPath = "$PSScriptRoot\terminal-settings.json"
+
+if (Test-Path (Split-Path $TerminalSettingsPath)) {
+    if (Test-Path $TerminalSettingsPath) {
+        Write-Host "Backing up existing terminal settings..." -ForegroundColor Gray
+        Move-Item $TerminalSettingsPath "$TerminalSettingsPath.bak_$(Get-Date -f yyyyMMdd)" -Force
+    }
+    New-Item -ItemType SymbolicLink -Path $TerminalSettingsPath -Target $RepoSettingsPath -Force
+    Write-Host "Success: Windows Terminal settings linked." -ForegroundColor Green
+}
+
+# --- 5. Make PowerShell 7 the Default Terminal Profile ---
 Write-Host "--- Setting PowerShell 7 as Default Profile ---" -ForegroundColor Yellow
-$SettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-if (Test-Path $SettingsPath) {
-    $settings = Get-Content $SettingsPath | ConvertFrom-Json
+if (Test-Path $TerminalSettingsPath) {
+    $settings = Get-Content $TerminalSettingsPath | ConvertFrom-Json
     # Find the GUID for PowerShell 7 (pwsh.exe)
-    $pwshProfile = $settings.profiles.list | Where-Object { $_.commandline -like "*pwsh.exe*" -or $_.name -eq "PowerShell" }
+    $pwshProfile = $settings.profiles.list | Where-Object { $_.commandline -like "*pwsh.exe*" -or $_.name -eq "PowerShell" -or $_.source -like "*PowershellCore*" }
     if ($pwshProfile) {
         $settings.defaultProfile = $pwshProfile.guid
-        $settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsPath
+        $settings | ConvertTo-Json -Depth 10 | Set-Content $TerminalSettingsPath
         Write-Host "Success: PowerShell 7 is now your default terminal." -ForegroundColor Green
     }
 }
 
-# --- 5. Purge Bloat (Edge & Recall) ---
+# --- 6. Purge Bloat (Edge & Recall) ---
 Write-Host "--- Purging Edge & Recall ---" -ForegroundColor Red
 DISM /Online /Disable-Feature /FeatureName:Recall /NoRestart /Quiet | Out-Null
 $EdgePath = Get-ChildItem "C:\Program Files (x86)\Microsoft\Edge\Application\1*\Installer\setup.exe" | Select-Object -ExpandProperty FullName -First 1
 if ($EdgePath) { Start-Process -FilePath $EdgePath -ArgumentList "--uninstall --system-level --force-uninstall" -Wait }
 
-# --- 6. Re-enable AI & Virtualization ---
+# --- 7. Re-enable AI & Virtualization ---
 Write-Host "--- Ensuring NPU & WSL2 are active ---" -ForegroundColor Green
 dism /online /enable-feature /featurename:PlatformAI /all /NoRestart | Out-Null
 dism /online /enable-feature /featurename:VirtualMachinePlatform /all /NoRestart | Out-Null
 dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /NoRestart | Out-Null
 
-# --- 7. Symlinks (Handling both 5.1 and 7 profiles) ---
+# --- 8. Symlinks (Handling both 5.1 and 7 profiles) ---
 Write-Host "--- Linking Dotfiles ---" -ForegroundColor Cyan
 $DOTFILES_DIR = $PSScriptRoot
 

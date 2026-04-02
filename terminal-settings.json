@@ -1,0 +1,99 @@
+{
+    "$help":  "https://aka.ms/terminal-documentation",
+    "$schema":  "https://aka.ms/terminal-profiles-schema",
+    "actions":  [
+                    {
+                        "command":  {
+                                        "action":  "copy",
+                                        "singleLine":  false
+                                    },
+                        "id":  "User.copy.644BA8F2"
+                    },
+                    {
+                        "command":  "paste",
+                        "id":  "User.paste"
+                    },
+                    {
+                        "command":  "find",
+                        "id":  "User.find"
+                    },
+                    {
+                        "command":  {
+                                        "action":  "splitPane",
+                                        "split":  "auto",
+                                        "splitMode":  "duplicate"
+                                    },
+                        "id":  "User.splitPane.A6751878"
+                    }
+                ],
+    "copyFormatting":  "none",
+    "copyOnSelect":  true,
+    "defaultProfile":  "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "firstWindowPreference":  "defaultProfile",
+    "keybindings":  [
+                        {
+                            "id":  "User.copy.644BA8F2",
+                            "keys":  "ctrl+c"
+                        },
+                        {
+                            "id":  "User.find",
+                            "keys":  "ctrl+shift+f"
+                        },
+                        {
+                            "id":  "User.paste",
+                            "keys":  "ctrl+v"
+                        },
+                        {
+                            "id":  "User.splitPane.A6751878",
+                            "keys":  "alt+shift+d"
+                        }
+                    ],
+    "newTabMenu":  [
+                       {
+                           "type":  "remainingProfiles"
+                       }
+                   ],
+    "profiles":  {
+                     "defaults":  {
+                                      "font":  {
+                                                   "face":  "JetBrainsMono NF"
+                                               }
+                                  },
+                     "list":  [
+                                  {
+                                      "guid":  "{5dbf87bc-d89b-5e46-9753-da9ab35ccc5f}",
+                                      "hidden":  false,
+                                      "name":  "Ubuntu",
+                                      "source":  "Microsoft.WSL"
+                                  },
+                                  {
+                                      "guid":  "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                                      "hidden":  false,
+                                      "name":  "PowerShell",
+                                      "source":  "Windows.Terminal.PowershellCore"
+                                  },
+                                  {
+                                      "guid":  "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                                      "hidden":  true,
+                                      "name":  "Command Prompt"
+                                  },
+                                  {
+                                      "guid":  "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+                                      "hidden":  true,
+                                      "name":  "Azure Cloud Shell",
+                                      "source":  "Windows.Terminal.Azure"
+                                  },
+                                  {
+                                      "guid":  "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                                      "hidden":  true,
+                                      "name":  "Windows PowerShell"
+                                  }
+                              ]
+                 },
+    "schemes":  [
+
+                ],
+    "themes":  [
+
+               ]
+}
