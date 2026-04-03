@@ -73,6 +73,7 @@ function New-SafeLink($LinkPath, $TargetPath) {
 # Profile & Terminal Links
 $TermSettings = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
 New-SafeLink $TermSettings "$DOTFILES_DIR\terminal-settings.json"
+New-SafeLink "$HOME\.config\starship.toml" "$DOTFILES_DIR\starship.toml"
 New-SafeLink $PROFILE "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
 $PS7_DIR = "$HOME\Documents\PowerShell"; if (!(Test-Path $PS7_DIR)) { mkdir $PS7_DIR | Out-Null }
 New-SafeLink "$PS7_DIR\Microsoft.PowerShell_profile.ps1" "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"

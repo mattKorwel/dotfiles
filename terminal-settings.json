@@ -62,11 +62,22 @@
     {
         "defaults": 
         {
+            "experimental.repositionCursorWithMouse": true,
+            "experimental.rightClickContextMenu": true,
             "font": 
             {
                 "cellHeight": "1.1",
                 "face": "JetBrainsMono Nerd Font Mono",
                 "size": 9
+            },
+            "showMarksOnScrollbar": true,
+            "snapOnInput": true,
+            "useAcrylic": false,
+            "opacity": 100,
+            "unfocusedAppearance": 
+            {
+                "opacity": 50,
+                "useAcrylic": true
             }
         },
         "list": 
