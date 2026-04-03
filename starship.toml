@@ -2,57 +2,59 @@
 add_newline = true
 
 # The main prompt layout
-# All "context" modules are placed after $fill to appear on the right
 format = """
 $directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python$time
 $character"""
 
-# Customize the "fill" line (draws across the screen)
 [fill]
 symbol = "─"
-style = "#444444" # Subtle gray line
+style = "#444444"
 
 [directory]
-style = "bold #00ffff" # Vibrant Cyan
+style = "bold #00ffff"
 truncate_to_repo = false
 truncation_length = 8
+symbol = " "
 
 [git_branch]
-symbol = "on "
-style = "bold #00ff00" # Vibrant Green
+symbol = " "
+style = "bold #00ff00"
 
 [git_status]
-style = "bold #ff0000" # Vibrant Red for status (shows changes)
+style = "bold #ff0000"
 format = "([\\[$all_status$ahead_behind\\]]($style) )"
 
 [cmd_duration]
-min_time = 500 # Only show if command took more than 500ms
-style = "bold #ffcc00" # Vibrant Yellow
+min_time = 500
+style = "bold #ffcc00"
 format = "took [$duration]($style) "
 
 [time]
 disabled = false
-format = "at [$time](bold #888888) " # Subtle gray timestamp
-time_format = "%T" # HH:MM:SS
+format = "at [$time](bold #888888) "
+time_format = "%T"
 
 [nodejs]
-format = "node [$version](bold #00ff00) "
+symbol = "󰎙 "
+format = "[$symbol($version)](bold #00ff00) "
 detect_files = ["package.json", ".node-version", "nvmrc"]
 
 [golang]
-format = "go [$version](bold #00ffff) "
+symbol = " "
+format = "[$symbol($version)](bold #00ffff) "
 
 [docker_context]
-format = "docker [$context](bold #00aaff) "
+symbol = " "
+format = "[$symbol($context)](bold #00aaff) "
 
 [python]
-format = "py [${symbol}${pyenv_prefix}${version}](bold #ffcc00) "
+symbol = " "
+format = "[$symbol(${pyenv_prefix}${version})](bold #ffcc00) "
 
 [character]
-success_symbol = "[>](bold #00ff00)" # Vibrant Green
-error_symbol = "[>](bold #ff0000)" # Vibrant Red
+success_symbol = "[❯](bold #00ff00)"
+error_symbol = "[❯](bold #ff0000)"
 
-# Disabling things we don't want
 [package]
 disabled = true
 
