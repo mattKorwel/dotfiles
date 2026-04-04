@@ -39,7 +39,7 @@ mkdir -p ~/.config/mise
 ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
 
 mkdir -p ~/.config
-ln -sf "$DOTFILES_DIR/config.toml" ~/.config/starship.toml
+ln -sf "$DOTFILES_DIR/starship.toml" ~/.config/starship.toml
 
 # 4. Gemini Configuration
 mkdir -p ~/.gemini
