@@ -83,9 +83,26 @@ if [[ -f ~/.gemini/settings.json && ! -L ~/.gemini/settings.json ]]; then
 fi
 ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
 
-# Gemini Scripts
+# 5. Gemini Scripts
 mkdir -p ~/.gemini-scripts
 ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gemini-functions.sh
+
+# --- 3. Extra Repositories (Gemini Ecosystem) ---
+if command -v gh &> /dev/null; then
+  echo "📡 Cloning Gemini ecosystem repositories..."
+
+  # Gemini CLI
+  if [ ! -d ~/dev/gemini-cli/main ]; then
+    mkdir -p ~/dev/gemini-cli
+    gh repo clone google-gemini/gemini-cli ~/dev/gemini-cli/main
+  fi
+
+  # Gemini Orbit
+  if [ ! -d ~/dev/gemini-cli-orbit/main ]; then
+    mkdir -p ~/dev/gemini-cli-orbit
+    gh repo clone google-gemini/gemini-cli-orbit ~/dev/gemini-cli-orbit/main
+  fi
+fi
 
 # Set Zsh as default shell if it isn't already
 if [ "$SHELL" != "$(which zsh)" ]; then
@@ -94,3 +111,4 @@ if [ "$SHELL" != "$(which zsh)" ]; then
 fi
 
 echo "✅ Dotfiles installation complete!"
+
