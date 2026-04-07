@@ -14,7 +14,7 @@ style = "#444444"
 style = "bold #00ffff"
 truncate_to_repo = false
 truncation_length = 8
-symbol = " "
+format = "[$path]($style)[$read_only]($read_only_style)   "
 
 [git_branch]
 symbol = " "
