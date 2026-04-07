@@ -1,0 +1,11 @@
+# Force LF (Unix) line endings for all shell scripts and dotfiles
+# to prevent Zsh parse errors on Windows/WSL.
+*.sh text eol=lf
+.zshrc text eol=lf
+.bashrc text eol=lf
+.bash_profile text eol=lf
+.p10k.zsh text eol=lf
+.gitconfig.shared text eol=lf
+starship.toml text eol=lf
+config.toml text eol=lf
+*.ps1 text eol=crlf
