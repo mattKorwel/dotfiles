@@ -1,16 +1,39 @@
-# 1. Homebrew (Must be first so Starship and other tools are found)
-eval "$(/opt/homebrew/bin/brew shellenv)"
+# --- 1. Environment Detection ---
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS (Homebrew)
+  [[ -f /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+  ALIAS_LS_COLOR="-G"
+else
+  # Linux / WSL
+  export COLORTERM=truecolor
+  ALIAS_LS_COLOR="--color=auto"
+  # Support Linuxbrew if installed
+  [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
 
-# 2. Starship Prompt (Initialize early for corporate hook compatibility)
+# --- 2. Tool Initialization (Mise, Starship, Zoxide) ---
+# Mise (Main version manager)
+if [[ -f "$HOME/.local/bin/mise" ]]; then
+  eval "$($HOME/.local/bin/mise activate zsh)"
+elif command -v mise &> /dev/null; then
+  eval "$(mise activate zsh)"
+fi
+
+# Starship Prompt
 if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"
 fi
 
-# ZSH options and styles
+# Zoxide (Smart cd)
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
+# --- 3. Shell Options & Completion ---
 setopt histignorealldups sharehistory appendhistory
 zstyle ':completion:*' menu yes select
 
-# Key bindings
+# Key bindings (Cross-platform standard)
 bindkey '^[[3~' delete-char
 bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
@@ -23,59 +46,77 @@ HISTFILE=~/.zsh_history
 HISTSIZE=10000
 SAVEHIST=$HISTSIZE
 
-# Shell Enhancements (Homebrew)
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# --- 4. Plugins & Enhancements ---
+# Try common paths for syntax highlighting and autosuggestions
+PLUGIN_PATHS=(
+  "/opt/homebrew/share"
+  "/usr/share"
+  "/usr/local/share"
+  "$HOME/.local/share"
+)
 
-# Custom Functions
-alias ls='ls -G --color=auto'
-alias ll='ls -GalF --color=always'
-alias la='ls -A'
-alias l='ls -CF'
+for p in "${PLUGIN_PATHS[@]}"; do
+  [[ -f "$p/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$p/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [[ -f "$p/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$p/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+done
+
+# FZF (Fuzzy Search & Tab-completion)
+if command -v fzf &> /dev/null; then
+  # Modern fzf has a built-in init
+  if fzf --version | grep -q '0.48\|0.49\|0.5'; then
+    eval "$(fzf --zsh)"
+  else
+    # Fallback to sourcing files for older versions
+    FZF_BASE=""
+    [[ -d /opt/homebrew/opt/fzf ]] && FZF_BASE="/opt/homebrew/opt/fzf"
+    [[ -d /usr/share/doc/fzf ]] && FZF_BASE="/usr/share/doc/fzf"
+    if [[ -n "$FZF_BASE" ]]; then
+       [[ -f "$FZF_BASE/shell/completion.zsh" ]] && source "$FZF_BASE/shell/completion.zsh"
+       [[ -f "$FZF_BASE/shell/key-bindings.zsh" ]] && source "$FZF_BASE/shell/key-bindings.zsh"
+    fi
+  fi
+fi
+
+# --- 5. Aliases & Functions ---
+alias ls="ls $ALIAS_LS_COLOR"
+alias ll="ls -alF $ALIAS_LS_COLOR"
+alias la="ls -A"
+alias l="ls -CF"
 alias grep='grep --color=auto'
 
-# 3. Mise (Manages Node, NPM, Go, and GCloud)
-eval "$(/Users/mattkorwel/.local/bin/mise activate zsh)"
-
-# 4. Zoxide (Smart cd)
-eval "$(zoxide init zsh)"
-
-# 5. FZF (Fuzzy Search & Tab-completion)
-# Using the explicit Homebrew path for better reliability on macOS
-source "/opt/homebrew/opt/fzf/shell/completion.zsh"
-source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
-
-# Internal Tooling Paths
+# --- 6. Tooling Paths ---
 export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
-export PATH="$PATH:/Users/mattkorwel/.antigravity/antigravity/bin"
+[[ -d "$HOME/.antigravity/antigravity/bin" ]] && export PATH="$PATH:$HOME/.antigravity/antigravity/bin"
 
-# GCloud Shell Completion (Loaded from Mise-managed install)
+# GCloud Shell Completion (Mise-managed)
 if [[ -d "$HOME/.local/share/mise/installs/gcloud" ]]; then
-  # Find the most recently installed version
   GCLOUD_BIN_DIR=$(ls -1d $HOME/.local/share/mise/installs/gcloud/* 2>/dev/null | tail -n1)
   [[ -f "$GCLOUD_BIN_DIR/completion.zsh.inc" ]] && source "$GCLOUD_BIN_DIR/completion.zsh.inc"
 fi
 
-# Load Gemini CLI Shortcuts & Functions
-[[ -f ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.sh ]] && source ~/dev/dotfiles/main/.gemini-scripts/gemini-functions.sh
+# --- 7. Custom Scripts & Integrations ---
+# Load Gemini CLI Shortcuts & Functions (Symlinked by install.sh)
+[[ -f ~/.gemini-scripts/gemini-functions.sh ]] && source ~/.gemini-scripts/gemini-functions.sh
 
-# Gemini Orbit Shell Integration
-alias orbit='node "/Users/mattkorwel/dev/gemini-cli-orbit/main/bundle/orbit-cli.js"'
-_orbit() {
-  local -a commands
-  commands=(
-    'ci:Monitor CI status for a branch with noise filtering.'
-    'install-shell:Install Orbit shell aliases and tab-completion.'
-    'jettison:Decommission a specific mission and its worktree.'
-    'liftoff:Build or wake infrastructure (use --with-station).'
-    'mission:Start, resume, or perform maneuvers on a PR mission.'
-    'pulse:Check station health and active mission status.'
-    'schematic:Manage infrastructure blueprints: <list|create|edit|import>'
-    'splashdown:Emergency shutdown of all active remote capsules.'
-    'station:Hardware control: <activate|list|liftoff|delete>'
-    'uplink:Inspect local or remote mission telemetry.'
-  )
-  _describe 'orbit' commands
-}
-compdef _orbit orbit
-# End Gemini Orbit Shell Integration
+# Gemini Orbit Shell Integration (If available)
+ORBIT_PATH="$HOME/dev/gemini-cli-orbit/main/bundle/orbit-cli.js"
+if [[ -f "$ORBIT_PATH" ]]; then
+  alias orbit="node '$ORBIT_PATH'"
+  _orbit() {
+    local -a commands
+    commands=(
+      'ci:Monitor CI status for a branch with noise filtering.'
+      'install-shell:Install Orbit shell aliases and tab-completion.'
+      'jettison:Decommission a specific mission and its worktree.'
+      'liftoff:Build or wake infrastructure (use --with-station).'
+      'mission:Start, resume, or perform maneuvers on a PR mission.'
+      'pulse:Check station health and active mission status.'
+      'schematic:Manage infrastructure blueprints: <list|create|edit|import>'
+      'splashdown:Emergency shutdown of all active remote capsules.'
+      'station:Hardware control: <activate|list|liftoff|delete>'
+      'uplink:Inspect local or remote mission telemetry.'
+    )
+    _describe 'orbit' commands
+  }
+  compdef _orbit orbit
+fi
