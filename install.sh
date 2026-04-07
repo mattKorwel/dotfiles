@@ -89,6 +89,11 @@ ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gem
 
 # --- 3. Extra Repositories (Gemini Ecosystem) ---
 if command -v gh &> /dev/null; then
+  if ! gh auth status &>/dev/null; then
+    echo "🔐 GitHub CLI not authenticated. Starting login..."
+    gh auth login
+  fi
+
   echo "📡 Cloning Gemini ecosystem repositories..."
 
   # Gemini CLI
