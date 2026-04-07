@@ -1,55 +1,96 @@
 #!/bin/bash
 
-# --- Tooling installation (macOS/Homebrew) ---
-if command -v brew &> /dev/null; then
-  echo "📡 Installing core tools via Homebrew..."
-  brew install starship mise zoxide fzf zsh-autosuggestions zsh-syntax-highlighting
+set -e
+
+echo "🚀 Starting Full Dotfiles Installation..."
+
+# --- 1. Tooling installation ---
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  if command -v brew &> /dev/null; then
+    echo "📡 Installing core tools via Homebrew (macOS)..."
+    brew install starship mise zoxide fzf zsh-autosuggestions zsh-syntax-highlighting gh
+  else
+    echo "⚠️ Homebrew not found. Skipping Homebrew tool installation."
+  fi
 else
-  echo "⚠️ Homebrew not found. Skipping Homebrew tool installation."
+  # Assume Linux / Ubuntu / WSL
+  echo "📡 Checking/Installing core tools (Linux/WSL)..."
+  
+  # Add GitHub CLI repository if needed
+  if ! command -v gh &> /dev/null; then
+    echo "📦 Adding GitHub CLI repository..."
+    (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
+    && sudo mkdir -p -m 755 /etc/apt/keyrings \
+    && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+    && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+  fi
+
+  sudo apt update
+  sudo apt install -y zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh wslu
+  
+  # Install Starship
+  if ! command -v starship &> /dev/null; then
+    echo "🚀 Installing Starship..."
+    mkdir -p "$HOME/.local/bin"
+    curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir "$HOME/.local/bin"
+  fi
+  
+  # Install Mise
+  if [[ ! -f "$HOME/.local/bin/mise" ]]; then
+    echo "🚀 Installing Mise..."
+    curl https://mise.jdx.dev/install.sh | sh
+  fi
+
+  # Trust and Install versions via Mise
+  echo "📡 Configuring Mise..."
+  export MISE_YES=1
+  "$HOME/.local/bin/mise" trust "$DOTFILES_DIR"
+  "$HOME/.local/bin/mise" install --dir "$DOTFILES_DIR"
 fi
 
-# --- Symlinks & Configuration ---
+# --- 2. Symlinks & Configuration ---
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "🔗 Setting up symlinks..."
+echo "🔗 Setting up symlinks from: $DOTFILES_DIR"
 
-# 1. ZSH Configuration
-if [[ -n "$ZSH_VERSION" || -f /bin/zsh || -f /usr/bin/zsh ]]; then
-  if [[ -f ~/.zshrc && ! -L ~/.zshrc ]]; then
-    mv ~/.zshrc ~/.zshrc.bak.$(date +%F_%T)
-  fi
-  ln -sf "$DOTFILES_DIR/.zshrc" ~/.zshrc
+# ZSH Configuration
+if [[ -f ~/.zshrc && ! -L ~/.zshrc ]]; then
+  mv ~/.zshrc ~/.zshrc.bak.$(date +%F_%T)
 fi
+ln -sf "$DOTFILES_DIR/.zshrc" ~/.zshrc
 
-# 2. Git Configuration (Using Include strategy)
-# We don't overwrite the entire .gitconfig because user.email and credential helpers 
-# can be machine-specific (e.g. Windows vs Mac paths for gh).
+# Git Configuration
 if [[ ! -f ~/.gitconfig ]]; then
   touch ~/.gitconfig
 fi
-
-# Ensure the shared config is included in the local .gitconfig
 if ! grep -q ".gitconfig.shared" ~/.gitconfig; then
   echo "📝 Including shared git config in ~/.gitconfig..."
   git config --global include.path "$DOTFILES_DIR/.gitconfig.shared"
 fi
 
-# 3. App-specific Configs
+# App-specific Configs
 mkdir -p ~/.config/mise
 ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
 
 mkdir -p ~/.config
 ln -sf "$DOTFILES_DIR/starship.toml" ~/.config/starship.toml
 
-# 4. Gemini Configuration
+# Gemini Configuration
 mkdir -p ~/.gemini
 if [[ -f ~/.gemini/settings.json && ! -L ~/.gemini/settings.json ]]; then
   mv ~/.gemini/settings.json ~/.gemini/settings.json.bak.$(date +%F_%T)
 fi
 ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
 
-# 5. Gemini Scripts
+# Gemini Scripts
 mkdir -p ~/.gemini-scripts
 ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gemini-functions.sh
 
-echo "✅ Dotfiles installation complete! (Bash/Zsh)"
+# Set Zsh as default shell if it isn't already
+if [ "$SHELL" != "$(which zsh)" ]; then
+  echo "🐚 Setting Zsh as default shell..."
+  sudo chsh -s "$(which zsh)" "$USER"
+fi
+
+echo "✅ Dotfiles installation complete!"
