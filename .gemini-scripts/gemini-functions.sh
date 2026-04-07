@@ -48,25 +48,28 @@ function gpreview() { ~/.gcli/preview/node_modules/.bin/gemini "$@"; }
 function gupdate-all() {
   echo "Updating Gemini CLI versions..."
   mkdir -p ~/.gcli/main ~/.gcli/nightly ~/.gcli/stable ~/.gcli/preview
-  
+
   echo "📡 Refreshing 'gemini' (GitHub main branch)..."
   npm install --prefix ~/.gcli/main https://github.com/google-gemini/gemini-cli#main
-  
+
   echo "📡 Refreshing 'gnightly' (npm @nightly)..."
   npm install --prefix ~/.gcli/nightly @google/gemini-cli@nightly
-  
+
   echo "📡 Refreshing 'gstable' (npm @latest)..."
   npm install --prefix ~/.gcli/stable @google/gemini-cli@latest
-  
+
   echo "📡 Refreshing 'gpreview' (npm @preview)..."
   npm install --prefix ~/.gcli/preview @google/gemini-cli@preview
-  
+
   # Ensure mise reshim is called to pick up potential binary changes
   mise reshim
-  
-  echo "\n✅ All versions updated! Use 'gemini', 'gnightly', 'gstable', or 'gpreview'."
-}
 
+  echo -e "\n✅ All versions updated! Use 'gemini', 'gnightly', 'gstable', or 'gpreview'."
+}
+# Aliases for common typos
+alias gupadte-all='gupdate-all'
+alias gudpate-all='gupdate-all'
+alias gup-all='gupdate-all'
 # Prunes all git worktrees except the main one for a given repo path.
 # Uses 'git-common-dir' to ensure we find the owner repo.
 # Usage: gcleanup-worktrees [repo_path] [--force]
@@ -122,3 +125,4 @@ function gcleanup-worktrees() {
 
   echo "✅ Complete. $count worktrees removed."
 }
+
