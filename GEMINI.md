@@ -42,6 +42,15 @@
   - **Launchers**: `Alt+Enter` PowerShell, `Alt+B` Zen Browser.
   - **Admin**: `Alt+Shift+R` reload, `Alt+Shift+Q` stop.
 
+## 🔧 Komorebi Management
+- **Check if running**: `tasklist | findstr komorebi` and `tasklist | findstr AutoHotkey`
+- **Kill everything**: `komorebic.exe stop` then `taskkill /IM AutoHotkey64.exe /F`
+- **Start everything**: `start-wm` (or `komorebic.exe start` then `Start-Process "$env:KOMOREBI_CONFIG_HOME\komorebi.ahk"`)
+- **Restart (weird state)**: `restart-wm`
+- **Reload komorebi config only**: `komorebic.exe reload-configuration` (or `Alt+Shift+R`)
+- **Reload AHK only**: `taskkill /IM AutoHotkey64.exe /F` → `Start-Process "$env:KOMOREBI_CONFIG_HOME\komorebi.ahk"`
+- **Common crash cause**: Monitor config changes (plug/unplug, RDP resolution change)
+
 ## 📝 Recent Architectural Decisions (ADR)
 - **ADR 001: Portable Config Home**: Used `KOMOREBI_CONFIG_HOME` to keep WM configs inside the dotfiles tree instead of the user root, facilitating easier git versioning.
 - **ADR 002: Shell-Based WM Control**: Added `start-wm` and `stop-wm` to the PowerShell profile to manage the `komorebi` and `whkd` lifecycle cleanly.

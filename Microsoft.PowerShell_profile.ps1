@@ -23,11 +23,18 @@ $env:KOMOREBI_CONFIG_HOME = "C:\dev\dotfiles\.config\komorebi"
 
 function start-wm {
     komorebic start
-    Start-Process "C:\dev\dotfiles\.config\komorebi\komorebi.ahk"
+    Start-Process "$env:KOMOREBI_CONFIG_HOME\komorebi.ahk"
 }
 
 function stop-wm {
     komorebic stop
+    Stop-Process -Name AutoHotkey64 -Force -ErrorAction SilentlyContinue
+}
+
+function restart-wm {
+    stop-wm
+    Start-Sleep -Seconds 1
+    start-wm
 }
 
 # --- Shell Enhancements (Predictive IntelliSense) ---
