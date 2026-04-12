@@ -18,21 +18,49 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& zoxide init powershell | Out-String)
 }
 
+# --- Komorebi (Tiling WM) ---
+$env:KOMOREBI_CONFIG_HOME = "C:\dev\dotfiles\.config\komorebi"
+
+function start-wm {
+    komorebic start
+    Start-Process "C:\dev\dotfiles\.config\komorebi\komorebi.ahk"
+}
+
+function stop-wm {
+    komorebic stop
+}
+
 # --- Shell Enhancements (Predictive IntelliSense) ---
 if (Get-Module -ListAvailable PSReadLine) {
     Import-Module PSReadLine
-    Set-PSReadLineOption -EditMode Vi
-    
-    # Enable Predictive IntelliSense (Ghost Text) from history
-    Set-PSReadLineOption -PredictionSource History
-    Set-PSReadLineOption -PredictionView InlineView
+    $hasInteractiveConsole = $false
+    $supportsPrediction = $false
 
-    # Set F2 to toggle between InlineView and ListView
-    # FIX: NextViMode was removed. We use SwitchPredictionView for modern PSReadLine.
-    Set-PSReadLineKeyHandler -Key F2 -Function SwitchPredictionView
-    
-    # Standard Vi Escape
-    Set-PSReadLineKeyHandler -Key "Escape" -Function ViCommandMode
+    try {
+        $hasInteractiveConsole = -not [Console]::IsInputRedirected
+        $supportsPrediction = $hasInteractiveConsole -and
+            -not [Console]::IsOutputRedirected -and
+            $null -ne $Host.UI -and
+            [bool]($Host.UI | Get-Member -Name SupportsVirtualTerminal -MemberType Property -ErrorAction SilentlyContinue) -and
+            $Host.UI.SupportsVirtualTerminal
+    } catch {
+        $hasInteractiveConsole = $false
+        $supportsPrediction = $false
+    }
+
+    if ($hasInteractiveConsole) {
+        Set-PSReadLineOption -EditMode Vi
+        Set-PSReadLineKeyHandler -Key "Escape" -Function ViCommandMode
+
+        # Prediction support requires a VT-capable interactive terminal.
+        if ($supportsPrediction) {
+            Set-PSReadLineOption -PredictionSource History
+            Set-PSReadLineOption -PredictionView InlineView
+
+            # Toggle between InlineView and ListView in supported hosts.
+            Set-PSReadLineKeyHandler -Key F2 -Function SwitchPredictionView
+        }
+    }
 }
 
 # --- General Aliases ---

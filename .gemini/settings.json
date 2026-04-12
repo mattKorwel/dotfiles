@@ -59,7 +59,10 @@
       "selectedType": "gemini-api-key"
     },
     "enablePermanentToolApproval": true,
-    "toolSandboxing": false
+    "toolSandboxing": false,
+    "folderTrust": {
+      "enabled": false
+    }
   },
   "telemetry": {
     "enabled": false
