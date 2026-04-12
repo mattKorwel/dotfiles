@@ -11,6 +11,15 @@ Komorebic(args) {
     }
 }
 
+; --- Monitor Dimensions Helper ---
+GetMonitorWorkArea(&mX, &mY, &mW, &mH) {
+    MonitorGetWorkArea(MonitorGetPrimary(), &left, &top, &right, &bottom)
+    mX := left
+    mY := top
+    mW := right - left
+    mH := bottom - top
+}
+
 ; --- Center Stage Toggle ---
 ; Alt+F toggles layout. Always promotes focused window when entering.
 global CenterStageActive := false
@@ -77,6 +86,9 @@ SmartNav(direction) {
 !f::ToggleCenterStage()
 !m:: {
     global MonocleActive
+    GetMonitorWorkArea(&mX, &mY, &mW, &mH)
+    hPad := Round(mW * 0.20)
+    vPad := Round(mH * 0.30)
     if MonocleActive {
         RunWait("komorebic.exe monitor-work-area-offset 0 0 0 0 0", , "Hide")
         RunWait("komorebic.exe toggle-monocle", , "Hide")
@@ -85,14 +97,27 @@ SmartNav(direction) {
         ToolTip("Grid Layout")
     } else {
         RunWait("komorebic.exe toggle-monocle", , "Hide")
-        RunWait("komorebic.exe monitor-work-area-offset 0 768 0 768 648", , "Hide")
+        RunWait("komorebic.exe monitor-work-area-offset 0 " . hPad . " 0 " . hPad . " " . vPad, , "Hide")
         RunWait("komorebic.exe retile", , "Hide")
         MonocleActive := true
         ToolTip("Monocle")
     }
     SetTimer(() => ToolTip(), -2000)
 }
-!t::Komorebic("toggle-float")
+global FloatActive := false
+!t:: {
+    global FloatActive
+    RunWait("komorebic.exe toggle-float", , "Hide")
+    if !FloatActive {
+        Sleep(300)
+        GetMonitorWorkArea(&mX, &mY, &mW, &mH)
+        WinMove(mX + Round(mW * 0.23), mY + Round(mH * 0.025), Round(mW * 0.61), Round(mH * 0.665), "A")
+        FloatActive := true
+    } else {
+        RunWait("komorebic.exe retile", , "Hide")
+        FloatActive := false
+    }
+}
 !s::Komorebic("toggle-stack")
 ![::Komorebic("cycle-stack previous")
 !]::Komorebic("cycle-stack next")
