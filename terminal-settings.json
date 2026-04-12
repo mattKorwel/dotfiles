@@ -60,27 +60,30 @@
     ],
     "profiles": 
     {
-        "defaults": 
+        "defaults":
         {
+            "background": "#1A1A1A",
+            "colorScheme": "One Half Dark",
             "experimental.repositionCursorWithMouse": true,
-            "experimental.rightClickContextMenu": true,
-            "font": 
+            "font":
             {
-                "cellHeight": "1.1",
-                "face": "JetBrainsMono Nerd Font Mono",
-                "size": 9
+                "cellHeight": "1.2",
+                "cellWidth": "0.7",
+                "face": "FiraCode Nerd Font Mono",
+                "size": 9,
+                "weight": "semi-light"
             },
+            "intenseTextStyle": "bright",
+            "opacity": 100,
+            "rightClickContextMenu": true,
             "showMarksOnScrollbar": true,
             "snapOnInput": true,
-            "background": "#1a1a1a",
-            "colorScheme": "One Half Dark",
-            "useAcrylic": true,
-            "opacity": 98,
             "unfocusedAppearance":
             {
                 "opacity": 75,
                 "useAcrylic": true
-            }
+            },
+            "useAcrylic": true
         },
         "list": 
         [

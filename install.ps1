@@ -56,6 +56,29 @@ foreach ($App in $Apps) {
     }
 }
 
+# --- 4b. FiraCode Nerd Font (not on winget, install from GitHub release) ---
+$FiraCodeInstalled = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -ErrorAction SilentlyContinue).'FiraCode Nerd Font Mono Regular (TrueType)'
+if (-not $FiraCodeInstalled) {
+    Write-Host "Installing FiraCode Nerd Font..." -ForegroundColor White
+    $NF_VERSION = "v3.3.0"
+    $ZipUrl = "https://github.com/ryanoasis/nerd-fonts/releases/download/$NF_VERSION/FiraCode.zip"
+    $ZipPath = "$env:TEMP\FiraCode.zip"
+    $ExtractPath = "$env:TEMP\FiraCode"
+    Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipPath -UseBasicParsing
+    Expand-Archive -Path $ZipPath -DestinationPath $ExtractPath -Force
+    $FontsDir = "$env:SystemRoot\Fonts"
+    $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+    Get-ChildItem "$ExtractPath\*.ttf" | ForEach-Object {
+        Copy-Item $_.FullName $FontsDir -Force
+        $FontName = $_.BaseName -replace "NerdFontMono-", "Nerd Font Mono " -replace "NerdFont-", "Nerd Font "
+        New-ItemProperty -Path $RegPath -Name "$FontName (TrueType)" -Value $_.Name -PropertyType String -Force | Out-Null
+    }
+    Remove-Item $ZipPath, $ExtractPath -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host "FiraCode Nerd Font installed." -ForegroundColor Green
+} else {
+    Write-Host "Check: FiraCode Nerd Font is already installed." -ForegroundColor Gray
+}
+
 # --- 5. Symlinks & Git/GPG Logic ---
 Write-Host "--- Linking Dotfiles & Configuring Git/GPG ---" -ForegroundColor Yellow
 function New-SafeLink($LinkPath, $TargetPath) {
