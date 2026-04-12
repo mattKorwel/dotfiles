@@ -72,11 +72,13 @@
             },
             "showMarksOnScrollbar": true,
             "snapOnInput": true,
-            "useAcrylic": false,
-            "opacity": 100,
-            "unfocusedAppearance": 
+            "background": "#1a1a1a",
+            "colorScheme": "One Half Dark",
+            "useAcrylic": true,
+            "opacity": 98,
+            "unfocusedAppearance":
             {
-                "opacity": 50,
+                "opacity": 75,
                 "useAcrylic": true
             }
         },
