@@ -56,8 +56,7 @@ if (Get-Module -ListAvailable PSReadLine) {
     }
 
     if ($hasInteractiveConsole) {
-        Set-PSReadLineOption -EditMode Vi
-        Set-PSReadLineKeyHandler -Key "Escape" -Function ViCommandMode
+        Set-PSReadLineOption -EditMode Emacs
 
         # Prediction support requires a VT-capable interactive terminal.
         if ($supportsPrediction) {
