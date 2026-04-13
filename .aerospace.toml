@@ -65,6 +65,8 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-f = 'fullscreen'
     alt-s = 'layout accordion horizontal vertical'
     alt-t = 'layout floating tiling'
+    alt-leftSquareBracket = 'focus --boundaries-action wrap-around-the-workspace dfs-prev'
+    alt-rightSquareBracket = 'focus --boundaries-action wrap-around-the-workspace dfs-next'
 
     # --- Workspaces (Matched to Alt+6/7/8/9) ---
     alt-1 = 'workspace 1'
