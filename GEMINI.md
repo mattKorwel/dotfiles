@@ -56,7 +56,7 @@
   - **Focus**: `Alt+I/K/J/L` (up/down/left/right).
   - **Move**: `Alt+Shift+I/K/J/L` (up/down/left/right).
   - **Monitors**: `Alt+.` / `Alt+,` focus next/prev, `Alt+Shift+.` / `Alt+Shift+,` move window.
-  - **Layouts**: `Alt+F` fullscreen, `Alt+S` accordion, `Alt+T` float.
+  - **Layouts**: `Alt+F` fullscreen, `Alt+S` accordion, `Alt+T` float, `Alt+[` / `Alt+]` cycle stack focus.
   - **Workspaces**: `Alt+1-5` (Generic), `Alt+6-8` (Dev, Communications, Personal).
   - **Launchers**: `Alt+Enter` iTerm, `Alt+B` Zen Browser.
   - **Close**: `Alt+Y`.
