@@ -1,0 +1,108 @@
+# AeroSpace Configuration (Matched to Komorebi Windows setup)
+# https://github.com/nikitabobko/AeroSpace
+
+config-version = 2
+
+# Start AeroSpace at login
+start-at-login = true
+
+# Normalizations
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Layouts
+accordion-padding = 30
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+# Persistent Workspaces
+# Ensures named workspaces exist even when empty
+persistent-workspaces = ['Dev', 'Communications', 'Personal']
+
+# Monitor Assignment
+# Dev workspace pinned to BenQ, others to built-in display
+[workspace-to-monitor-force-assignment]
+Dev = 'BenQ RD320U'
+Communications = 'Built-in Retina Display'
+Personal = 'Built-in Retina Display'
+
+# Mouse follows focus
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Gaps
+[gaps]
+    inner.horizontal = 5
+    inner.vertical =   5
+    outer.left =       5
+    outer.bottom =     5
+    outer.top =        5
+    outer.right =      5
+
+# 'main' binding mode
+[mode.main.binding]
+    # --- Navigation (Matched to Komorebi AHK) ---
+    alt-i = 'focus up'
+    alt-k = 'focus down'
+    alt-j = 'focus left'
+    alt-l = 'focus right'
+
+    # --- Move (Matched to Komorebi AHK) ---
+    alt-shift-i = 'move up'
+    alt-shift-k = 'move down'
+    alt-shift-j = 'move left'
+    alt-shift-l = 'move right'
+
+    # --- Monitor Management ---
+    # Switch focus between monitors
+    alt-period = 'focus-monitor next'
+    alt-comma = 'focus-monitor prev'
+    # Move window to the other monitor
+    alt-shift-period = 'move-node-to-monitor next'
+    alt-shift-comma = 'move-node-to-monitor prev'
+
+    # --- Layout Control ---
+    alt-f = 'fullscreen'
+    alt-s = 'layout accordion horizontal vertical'
+    alt-t = 'layout floating tiling'
+
+    # --- Workspaces (Matched to Alt+6/7/8/9) ---
+    alt-1 = 'workspace 1'
+    alt-2 = 'workspace 2'
+    alt-3 = 'workspace 3'
+    alt-4 = 'workspace 4'
+    alt-5 = 'workspace 5'
+    alt-6 = 'workspace Dev'
+    alt-7 = 'workspace Communications'
+    alt-8 = 'workspace Personal'
+
+    alt-shift-1 = 'move-node-to-workspace 1'
+    alt-shift-2 = 'move-node-to-workspace 2'
+    alt-shift-3 = 'move-node-to-workspace 3'
+    alt-shift-4 = 'move-node-to-workspace 4'
+    alt-shift-5 = 'move-node-to-workspace 5'
+    alt-shift-6 = 'move-node-to-workspace Dev'
+    alt-shift-7 = 'move-node-to-workspace Communications'
+    alt-shift-8 = 'move-node-to-workspace Personal'
+
+    # --- Close Window (Matched to Alt+y) ---
+    alt-y = 'close'
+
+    # --- Launchers ---
+    alt-enter = "exec-and-forget osascript -e 'tell application \"iTerm\" to create window with default profile'"
+    alt-b = 'exec-and-forget open -a "Zen Browser"'
+
+    # --- General ---
+    alt-shift-r = 'reload-config'
+    alt-shift-semicolon = 'mode service'
+
+# 'service' binding mode
+[mode.service.binding]
+    esc = ['reload-config', 'mode main']
+    r = ['flatten-workspace-tree', 'mode main']
+    f = ['layout floating tiling', 'mode main']
+    backspace = ['close-all-windows-but-current', 'mode main']
+
+    alt-shift-j = ['join-with left', 'mode main']
+    alt-shift-k = ['join-with down', 'mode main']
+    alt-shift-i = ['join-with up', 'mode main']
+    alt-shift-l = ['join-with right', 'mode main']
