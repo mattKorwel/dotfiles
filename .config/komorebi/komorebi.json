@@ -6,10 +6,10 @@
   "default_workspace_padding": 2,
   "default_container_padding": 2,
   "border": true,
-  "border_width": 6,
+  "border_width": 8,
   "border_offset": -1,
   "border_colors": {
-    "active": "#64B4FF",
+    "active": "#00FFFF",
     "inactive": "#424242"
   },
   "monitors": [

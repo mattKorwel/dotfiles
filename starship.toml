@@ -11,17 +11,17 @@ symbol = "─"
 style = "#444444"
 
 [directory]
-style = "bold #00ffff"
+style = "bold #00afaf"
 truncate_to_repo = false
 truncation_length = 8
 format = "[$path]($style)[$read_only]($read_only_style)   "
 
 [git_branch]
 symbol = " "
-style = "bold #00ff00"
+style = "bold #5faf5f"
 
 [git_status]
-style = "bold #ff0000"
+style = "bold #af5f5f"
 format = "([\\[$all_status$ahead_behind\\]]($style) )"
 
 [cmd_duration]
@@ -36,7 +36,7 @@ time_format = "%T"
 
 [nodejs]
 symbol = "󰎙 "
-format = "[$symbol($version)](bold #00ff00) "
+format = "[$symbol($version)](bold #5faf5f) "
 detect_files = ["package.json", ".node-version", "nvmrc"]
 
 [golang]
