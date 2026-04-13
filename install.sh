@@ -73,6 +73,8 @@ fi
 mkdir -p ~/.config/mise
 ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
 
+ln -sf "$DOTFILES_DIR/.aerospace.toml" ~/.aerospace.toml
+
 mkdir -p ~/.config
 ln -sf "$DOTFILES_DIR/starship.toml" ~/.config/starship.toml
 
