@@ -17,14 +17,15 @@ default-root-container-orientation = 'auto'
 
 # Persistent Workspaces
 # Ensures named workspaces exist even when empty
-persistent-workspaces = ['Dev', 'Communications', 'Personal']
+persistent-workspaces = ['Dev', 'Google', 'Communications', 'Personal']
 
 # Monitor Assignment
 # Dev workspace pinned to BenQ, others to built-in display
 [workspace-to-monitor-force-assignment]
 Dev = 'BenQ RD320U'
+Google = 'BenQ RD320U'
 Communications = 'Built-in Retina Display'
-Personal = 'Built-in Retina Display'
+Personal = 'BenQ RD320U'
 
 # Mouse follows focus
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
@@ -65,18 +66,28 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-f = 'fullscreen'
     alt-s = 'layout accordion horizontal vertical'
     alt-t = 'layout floating tiling'
+    alt-slash = 'layout tiles horizontal vertical' # Toggle between horizontal and vertical
+    alt-0 = 'balance-sizes' # Even out the grid
     alt-leftSquareBracket = 'focus --boundaries-action wrap-around-the-workspace dfs-prev'
     alt-rightSquareBracket = 'focus --boundaries-action wrap-around-the-workspace dfs-next'
 
     # --- Workspaces (Matched to Alt+6/7/8/9) ---
+    alt-n = 'workspace --wrap-around next'
+    alt-p = 'workspace --wrap-around prev'
+    alt-tab = 'workspace-back-and-forth'
+
     alt-1 = 'workspace 1'
     alt-2 = 'workspace 2'
     alt-3 = 'workspace 3'
     alt-4 = 'workspace 4'
     alt-5 = 'workspace 5'
     alt-6 = 'workspace Dev'
-    alt-7 = 'workspace Communications'
-    alt-8 = 'workspace Personal'
+    alt-7 = 'workspace Google'
+    alt-8 = 'workspace Communications'
+    alt-9 = 'workspace Personal'
+
+    alt-shift-n = 'move-node-to-workspace --wrap-around next'
+    alt-shift-p = 'move-node-to-workspace --wrap-around prev'
 
     alt-shift-1 = 'move-node-to-workspace 1'
     alt-shift-2 = 'move-node-to-workspace 2'
@@ -84,15 +95,17 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-shift-4 = 'move-node-to-workspace 4'
     alt-shift-5 = 'move-node-to-workspace 5'
     alt-shift-6 = 'move-node-to-workspace Dev'
-    alt-shift-7 = 'move-node-to-workspace Communications'
-    alt-shift-8 = 'move-node-to-workspace Personal'
+    alt-shift-7 = 'move-node-to-workspace Google'
+    alt-shift-8 = 'move-node-to-workspace Communications'
+    alt-shift-9 = 'move-node-to-workspace Personal'
 
     # --- Close Window (Matched to Alt+y) ---
     alt-y = 'close'
 
     # --- Launchers ---
     alt-enter = "exec-and-forget osascript -e 'tell application \"iTerm\" to create window with default profile'"
-    alt-b = 'exec-and-forget open -a "Zen Browser"'
+    alt-b = 'exec-and-forget open -na "Google Chrome" --args --new-window --profile-directory="Default"'
+    alt-g = 'exec-and-forget open -na "Google Chrome" --args --new-window --profile-directory="Profile 1"'
 
     # --- General ---
     alt-shift-r = 'reload-config'
@@ -109,3 +122,8 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-shift-k = ['join-with down', 'mode main']
     alt-shift-i = ['join-with up', 'mode main']
     alt-shift-l = ['join-with right', 'mode main']
+
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+if.window-title-regex-substring = 'Matt \(Personal\)'
+run = 'move-node-to-workspace Personal'
