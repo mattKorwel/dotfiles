@@ -123,10 +123,18 @@ global FloatActive := false
 !]::Komorebic("cycle-stack next")
 
 ; --- Workspaces (Alt+6/7/8/9) ---
+!n::Komorebic("focus-workspace-cycle next")
+!p::Komorebic("focus-workspace-cycle previous")
+!Tab::Komorebic("focus-last-workspace")
+
 !6::Komorebic("focus-workspace 0")
 !7::Komorebic("focus-workspace 1")
 !8::Komorebic("focus-workspace 2")
 !9::Komorebic("focus-workspace 3")
+
+!+n::Komorebic("move-container-to-workspace-cycle next")
+!+p::Komorebic("move-container-to-workspace-cycle previous")
+
 !+6::Komorebic("move-to-workspace 0")
 !+7::Komorebic("move-to-workspace 1")
 !+8::Komorebic("move-to-workspace 2")

@@ -40,7 +40,7 @@
   - **Focus**: `Alt+I/K/J/L` (up/down/left/right).
   - **Move**: `Alt+Shift+I/K/J/L` (up/down/left/right).
   - **Windows**: `Alt+T` toggle float, `Alt+S` toggle_stack, `Alt+[/]` cycle stack.
-  - **Workspaces**: `Alt+6/7/8/9` focus, `Alt+Shift+6/7/8/9` move window.
+  - **Workspaces**: `Alt+6/7/8/9` focus, `Alt+Shift+6/7/8/9` move window, `Alt+N/P` cycle, `Alt+Tab` back-and-forth.
   - **Launchers**: `Alt+Enter` PowerShell, `Alt+B` Zen Browser.
   - **Close**: `Alt+Y`.
   - **Admin**: `Alt+Shift+R` reload, `Alt+Shift+Q` stop.
