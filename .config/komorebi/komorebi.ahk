@@ -147,6 +147,13 @@ global FloatActive := false
 !Enter::Run("pwsh.exe")
 !b::Run("zen.exe")
 
+; --- Voyager Seamless Keys (F13-F17) ---
+F13::Send("#+s")      ; Selection Screenshot (Win+Shift+S)
+F14::Send("#h")       ; Dictation (Win+H)
+F15::Send("^v")       ; Universal Paste (Ctrl+V)
+F16::Send("^c")       ; Universal Copy (Ctrl+C)
+F17::Send("^x")       ; Universal Cut (Ctrl+X)
+
 ; --- Startup: ensure clean state ---
 RunWait("komorebic.exe monitor-work-area-offset 0 0 0 0 0", , "Hide")
 ; If komorebi was left in monocle, exit it
