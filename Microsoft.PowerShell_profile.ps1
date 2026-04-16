@@ -211,3 +211,14 @@ function gswitch([string]$branch) {
         git checkout -b $branch
     }
 }
+
+# --- Remote & Persistence ---
+# SSH into 'cli' and attach to (or create) a tmux session
+# Usage: gw [session_name]
+function gw {
+    param(
+        [Parameter(Mandatory=$false, Position=0)]
+        [string]$SessionName = "main"
+    )
+    ssh -t cli "tmux attach -t $SessionName || tmux new -s $SessionName"
+}
