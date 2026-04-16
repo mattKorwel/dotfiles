@@ -126,3 +126,12 @@ function gcleanup-worktrees() {
   echo "✅ Complete. $count worktrees removed."
 }
 
+# --- Remote & Persistence ---
+# SSH into 'cli' and attach to (or create) a tmux session
+# Usage: gw [session_name]
+function gw() {
+  local host="cli"
+  local session=${1:-main}
+  ssh -t "$host" "tmux attach -t $session || tmux new -s $session"
+}
+
