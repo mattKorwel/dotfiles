@@ -63,12 +63,10 @@
   - **Admin**: `Alt+Shift+R` reload, `Alt+Shift+;` service mode.
 
 ## 🔧 Management
-- **Voyager Seamless Protocol**: Uses F13-F17 keys for cross-platform parity.
-  - `F13`: Selection Screenshot.
-  - `F14`: Dictation.
-  - `F15`: Paste.
-  - `F16`: Copy.
-  - `F17`: Cut.
+- **Voyager Universal Protocol**: Uses GUI (Win/Cmd) based shortcuts for cross-platform parity.
+  - `GUI+Shift+4`: Selection Screenshot (Native Mac / Remapped on Win).
+  - `GUI+Shift+D`: Dictation (Native Win / Remapped on Mac).
+  - `GUI+C/V/X`: Universal Copy/Paste/Cut.
 - **Windows (Komorebi)**:
   - **Check if running**: `tasklist | findstr komorebi` and `tasklist | findstr AutoHotkey`
   - **Kill everything**: `komorebic.exe stop` then `taskkill /IM AutoHotkey64.exe /F`
