@@ -34,6 +34,13 @@ function gadd() {
    git ci -am "$*" && git push -u origin HEAD
 }
 
+# --- Gemini CLI Shortcuts ---
+
+# Gemini CLI Prompt Shorthand
+function g() {
+  gemini -p "if exists read summary.md. then address: $*. when done append any relevant context to summary.md"
+}
+
 # --- Gemini CLI Version Manager (High Performance) ---
 
 # Isolated aliases for specific channels

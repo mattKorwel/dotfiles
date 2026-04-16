@@ -98,25 +98,25 @@ fi
 # Load Gemini CLI Shortcuts & Functions (Symlinked by install.sh)
 [[ -f ~/.gemini-scripts/gemini-functions.sh ]] && source ~/.gemini-scripts/gemini-functions.sh
 
-# Gemini Orbit Shell Integration (If available)
-ORBIT_PATH="$HOME/dev/gemini-cli-orbit/main/bundle/orbit-cli.js"
-if [[ -f "$ORBIT_PATH" ]]; then
-  alias orbit="node '$ORBIT_PATH'"
-  _orbit() {
-    local -a commands
-    commands=(
-      'ci:Monitor CI status for a branch with noise filtering.'
-      'install-shell:Install Orbit shell aliases and tab-completion.'
-      'jettison:Decommission a specific mission and its worktree.'
-      'liftoff:Build or wake infrastructure (use --with-station).'
-      'mission:Start, resume, or perform maneuvers on a PR mission.'
-      'pulse:Check station health and active mission status.'
-      'schematic:Manage infrastructure blueprints: <list|create|edit|import>'
-      'splashdown:Emergency shutdown of all active remote capsules.'
-      'station:Hardware control: <activate|list|liftoff|delete>'
-      'uplink:Inspect local or remote mission telemetry.'
-    )
-    _describe 'orbit' commands
-  }
-  compdef _orbit orbit
-fi
+export PATH="$HOME/dev/bin:$PATH"
+
+# Gemini Orbit Shell Integration
+alias orbit='node "/Users/mattkorwel/.gemini/extensions/orbit/bundle/orbit-cli.js"'
+_orbit() {
+  local -a commands
+  commands=(
+    'ci:Monitor CI status for a branch with noise filtering.'
+    'install-shell:Install Orbit shell aliases and tab-completion.'
+    'jettison:Decommission a specific mission and its worktree.'
+    'liftoff:Build or wake infrastructure (use --with-new-station).'
+    'mission:Start, resume, or perform maneuvers on a PR mission.'
+    'pulse:Check station health and active mission status.'
+    'schematic:Manage infrastructure blueprints: <list|create|edit|import>'
+    'splashdown:Emergency shutdown of all active remote capsules.'
+    'station:Hardware control: <activate|list|liftoff|delete>'
+    'uplink:Inspect local or remote mission telemetry.'
+  )
+  _describe 'orbit' commands
+}
+compdef _orbit orbit
+# End Gemini Orbit Shell Integration
