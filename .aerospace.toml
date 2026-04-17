@@ -20,11 +20,11 @@ default-root-container-orientation = 'auto'
 persistent-workspaces = ['Dev', 'Google', 'Communications', 'Personal']
 
 # Monitor Assignment
-# Dev workspace pinned to BenQ, others to built-in display
+# All workspaces consolidated to the primary monitor
 [workspace-to-monitor-force-assignment]
 Dev = 'BenQ RD320U'
 Google = 'BenQ RD320U'
-Communications = 'Built-in Retina Display'
+Communications = 'BenQ RD320U'
 Personal = 'BenQ RD320U'
 
 # Mouse follows focus
