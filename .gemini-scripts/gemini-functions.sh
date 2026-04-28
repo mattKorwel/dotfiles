@@ -41,6 +41,34 @@ function g() {
   gemini -p "if exists read summary.md. then address: $*. when done append any relevant context to summary.md"
 }
 
+# Direct Gemini API Call (Flash Lite Preview)
+# Usage: gapi <prompt>
+function gapi() {
+  local prompt="$*"
+  if [[ -z "$prompt" ]]; then
+    echo "Usage: gapi <prompt>"
+    return 1
+  fi
+
+  local api_key="${GEMINI_API_KEY:-}"
+  if [[ -z "$api_key" && -f ~/.env ]]; then
+    api_key=$(grep "^GEMINI_API_KEY=" ~/.env | head -n 1 | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+  fi
+
+  if [[ -z "$api_key" ]]; then
+    echo "Error: GEMINI_API_KEY not found in environment or ~/.env"
+    return 1
+  fi
+
+  # Payload construction
+  local json_payload
+  json_payload=$(printf '{"contents": [{"parts":[{"text": "%s"}]}]}' "$prompt")
+
+  curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=$api_key" \
+       -H "Content-Type: application/json" \
+       -d "$json_payload"
+}
+
 # --- Gemini CLI Version Manager (High Performance) ---
 
 # Isolated aliases for specific channels
@@ -140,5 +168,61 @@ function gw() {
   local host="cli"
   local session=${1:-main}
   ssh -t "$host" "tmux attach -t $session || tmux new -s $session"
+}
+
+# Connect to a Managed OpenClaw Sandbox VM via BeyondCorp SSH
+# Usage: gcorp -n <name> [-p <project-id>] [--zone <zone>]
+function gcorp() {
+  local VM_NAME=""
+  local PROJECT_ID="${OPENCLAW_PROJECT_ID:-}"
+  local ZONE="us-central1-a"
+
+  while [[ "$#" -gt 0 ]]; do
+    case $1 in
+      -n|--vm-name)
+        VM_NAME="$2"
+        shift 2
+        ;;
+      --vm-name=*)
+        VM_NAME="${1#*=}"
+        shift
+        ;;
+      -p|--project)
+        PROJECT_ID="$2"
+        shift 2
+        ;;
+      --project=*)
+        PROJECT_ID="${1#*=}"
+        shift
+        ;;
+      --zone)
+        ZONE="$2"
+        shift 2
+        ;;
+      --zone=*)
+        ZONE="${1#*=}"
+        shift
+        ;;
+      *)
+        echo "Usage: gcorp -n <name> [-p <project-id>] [--zone <zone>]"
+        return 1
+        ;;
+    esac
+  done
+
+  if [[ -z "$VM_NAME" || -z "$PROJECT_ID" ]]; then
+    echo "Error: Target VM Name and Google Cloud Project ID must both be resolved."
+    echo "Please provide --project explicitly, or ensure OPENCLAW_PROJECT_ID is exported in your shell environment!"
+    return 1
+  fi
+
+  # Format standard corporate username (matt.korwel -> matt_korwel_google_com)
+  local CORP_USER="$(whoami | tr '.' '_')_google_com"
+  local TARGET_HOST="nic0.$VM_NAME.$ZONE.c.$PROJECT_ID.internal.gcpnode.com"
+
+  echo "Connecting to Managed OpenClaw Sandbox VM via BeyondCorp SSH..."
+  echo "Target: $CORP_USER@$TARGET_HOST"
+
+  ssh -t -i ~/.ssh/google_compute_engine "$CORP_USER@$TARGET_HOST" "tmux attach || tmux new"
 }
 
