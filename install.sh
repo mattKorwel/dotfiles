@@ -40,7 +40,6 @@ ensure_zsh() {
 if [ ! -d "$TARGET_DIR/.git" ]; then
   echo "📡 Bootstrapping: Cloning public dotfiles to $TARGET_DIR..."
   
-  # Ensure git is installed first
   if ! command -v git &> /dev/null; then
     echo "📦 Git not found. Installing..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -55,99 +54,76 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
   git clone "$REPO_URL" "$TARGET_DIR"
 fi
 
-# Ensure we are working with the correct directory
-# If run via curl, this might be empty, but standard runs will use script path
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)"
-DOTFILES_DIR="${SCRIPT_DIR:-$TARGET_DIR}"
+DOTFILES_DIR="$TARGET_DIR"
+mkdir -p "$HOME/.local/bin"
 
 # --- 2. Core Tooling Installation ---
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  if ! command -v brew &> /dev/null; then
-    echo "⚠️ Homebrew not found. Please install it first: https://brew.sh/"
-  else
-    echo "📡 Ensuring core tools are present via Homebrew (git, starship, mise, zoxide, etc.)..."
-    brew install git starship mise zoxide fzf zsh-autosuggestions zsh-syntax-highlighting gh
+  echo "📡 Ensuring core tools are present (Mac)..."
+  if command -v brew &> /dev/null; then
+    # We exclude mise and starship from brew to keep them standalone
+    brew install git zoxide fzf zsh-autosuggestions zsh-syntax-highlighting gh
   fi
 else
   echo "📡 Checking/Installing core tools (Linux/WSL)..."
   sudo apt-get update
-  
-  # Ensure Git and other essentials are present
-  sudo apt-get install -y git curl wget
-  if ! command -v gh &> /dev/null; then
-    echo "📦 Adding GitHub CLI repository..."
-    (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
-    && sudo mkdir -p -m 755 /etc/apt/keyrings \
-    && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-    && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-    sudo apt-get update
-  fi
+  sudo apt-get install -y git curl wget zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh wslu
+fi
 
-  sudo apt-get install -y zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh wslu
-  
-  # Ensure local bin exists
-  mkdir -p "$HOME/.local/bin"
+# Standalone Starship Install (Common for both)
+if ! command -v starship &> /dev/null; then
+  echo "🚀 Installing Starship (Standalone)..."
+  curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir "$HOME/.local/bin" > /dev/null
+fi
 
-  # Starship (Quiet install)
-  if ! command -v starship &> /dev/null; then
-    echo "🚀 Installing Starship..."
-    curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir "$HOME/.local/bin" > /dev/null
-  fi
-  
-  # Mise (Quiet install)
-  if [[ ! -f "$HOME/.local/bin/mise" ]]; then
-    echo "🚀 Installing Mise..."
-    curl https://mise.jdx.dev/install.sh | sh > /dev/null
-  fi
+# Standalone Mise Install (Common for both)
+if [[ ! -f "$HOME/.local/bin/mise" ]]; then
+  echo "🚀 Installing Mise (Standalone)..."
+  curl https://mise.jdx.dev/install.sh | sh > /dev/null
 fi
 
 # --- 3. Runtime & Tool Installation (Mise) ---
 
 echo "📡 Configuring Mise (Runtimes & GCloud)..."
-# Find mise binary
-MISE_BIN="mise"
-if [[ -f "$HOME/.local/bin/mise" ]]; then
-  MISE_BIN="$HOME/.local/bin/mise"
-elif [[ -f "/usr/local/bin/mise" ]]; then
-  MISE_BIN="/usr/local/bin/mise"
-elif [[ -f "/opt/homebrew/bin/mise" ]]; then
-  MISE_BIN="/opt/homebrew/bin/mise"
-fi
+MISE_BIN="$HOME/.local/bin/mise"
 
-if command -v "$MISE_BIN" &> /dev/null; then
+if [[ -f "$MISE_BIN" ]]; then
+  # CRITICAL: Put mise in the PATH for this script and activate it
+  export PATH="$HOME/.local/bin:$PATH"
+  eval "$($MISE_BIN activate bash)"
   export MISE_YES=1
+  
   "$MISE_BIN" trust "$DOTFILES_DIR"
+  echo "📦 Running mise install..."
   (cd "$DOTFILES_DIR" && "$MISE_BIN" install)
   
   # Install Gemini CLI globally
-  echo "📡 Installing Gemini CLI (@nightly)..."
-  "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
+  # Because of 'eval' above, npm should now be in the path
+  if command -v npm &> /dev/null; then
+    echo "📡 Installing Gemini CLI (@nightly)..."
+    npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
+  else
+    echo "⚠️ npm not found. Is node defined in your mise.toml?"
+  fi
 
   # --- GCloud Component Management ---
-  if "$MISE_BIN" which gcloud &> /dev/null; then
-    GCLOUD_PATH=$("$MISE_BIN" which gcloud)
+  if command -v gcloud &> /dev/null; then
+    GCLOUD_PATH=$(which gcloud)
     
-    # Check if this is a managed/corporate installation (e.g. in /google/bin or /usr/local/Caskroom)
-    # Managed installs usually don't allow component updates via the CLI
     if [[ "$GCLOUD_PATH" == *"/google/bin"* ]] || [[ "$GCLOUD_PATH" == *"/Caskroom"* ]]; then
-      echo "💡 Detected managed/corporate GCloud installation ($GCLOUD_PATH). Skipping component management."
+      echo "💡 Detected managed GCloud installation. Skipping component management."
     else
-      read -p "❓ Would you like to install all optional GCloud components? (y/n) " -n 1 -r
+      read -p "❓ Would you like to install optional GCloud components? (y/n) " -n 1 -r
       echo
       if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "📡 Installing all Google Cloud components (this may take a while)..."
         export CLOUDSDK_CORE_DISABLE_PROMPTS=1
-        COMPONENTS=$(gcloud components list --filter="state.name='Not Installed'" --format="value(id)" 2>/dev/null || true)
-        if [[ -n "$COMPONENTS" ]]; then
-           echo "$COMPONENTS" | xargs -r gcloud components install --quiet
-        fi
+        gcloud components install --quiet alpha beta cloud-datastore-emulator
       fi
     fi
   fi
 else
-  echo "⚠️ Mise not found. Runtimes and GCloud install skipped."
+  echo "⚠️ Mise binary not found at $MISE_BIN. Runtimes skipped."
 fi
 
 ensure_zsh
@@ -156,7 +132,6 @@ ensure_zsh
 
 echo "🔗 Setting up symlinks from: $DOTFILES_DIR"
 
-# Shell Profiles
 for f in .zshrc .bashrc .bash_profile; do
   if [[ -f "$HOME/$f" && ! -L "$HOME/$f" ]]; then
     mv "$HOME/$f" "$HOME/$f.bak.$(date +%F_%T)"
@@ -164,10 +139,8 @@ for f in .zshrc .bashrc .bash_profile; do
   ln -sf "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
 done
 
-# Config Directory
 mkdir -p ~/.config/mise ~/.config/komorebi ~/.config/tmux ~/.config/aerospace ~/.config/windows-terminal ~/.config/git
 
-# Core Configs
 ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
 ln -sf "$DOTFILES_DIR/.config/starship.toml" ~/.config/starship.toml
 ln -sf "$DOTFILES_DIR/.config/tmux/tmux.conf" ~/.tmux.conf
@@ -175,66 +148,31 @@ ln -sf "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
 ln -sf "$DOTFILES_DIR/.config/windows-terminal/settings.json" ~/.config/windows-terminal/settings.json
 ln -sf "$DOTFILES_DIR/.config/git/gitconfig.shared" ~/.config/git/gitconfig.shared
 
-# Git Configuration
-if [[ ! -f ~/.gitconfig ]]; then
-  touch ~/.gitconfig
-fi
+if [[ ! -f ~/.gitconfig ]]; then touch ~/.gitconfig; fi
 if ! grep -q "gitconfig.shared" ~/.gitconfig; then
-  echo "📝 Including shared git config in ~/.gitconfig..."
   git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
 fi
 
-# Gemini Config
+# Gemini Setup
 mkdir -p ~/.gemini
-if [[ -f ~/.gemini/settings.json && ! -L ~/.gemini/settings.json ]]; then
-  mv ~/.gemini/settings.json ~/.gemini/settings.json.bak.$(date +%F_%T)
-fi
 ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
-
-# Gemini Scripts
 mkdir -p ~/.gemini-scripts
 ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gemini-functions.sh
 
 # --- 5. GitHub & Private Extensions ---
 
 if command -v gh &> /dev/null; then
-  if ! gh auth status &>/dev/null; then
-    echo "🔐 GitHub CLI not authenticated. Please log in to enable ecosystem clones."
-    gh auth login
-  fi
-
   if gh auth status &>/dev/null; then
-    # Optional: Clone Private Extensions
     if [ ! -d "$PRIVATE_DIR" ]; then
-      read -p "❓ Would you like to clone your private dotfiles extensions? (y/n) " -n 1 -r
+      read -p "❓ Clone private dotfiles extensions? (y/n) " -n 1 -r
       echo
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         mkdir -p "$(dirname "$PRIVATE_DIR")"
-        gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR" || echo "⚠️ Could not clone private repo. Ensure it exists at $PRIVATE_REPO_URL"
+        gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR" || echo "⚠️ Private repo clone failed."
       fi
     fi
   fi
 fi
 
-# --- 6. Optional: Dashlane CLI ---
-if ! command -v dcli &> /dev/null; then
-  read -p "❓ Would you like to install Dashlane CLI? (y/n) " -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "📡 Installing Dashlane CLI..."
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      brew install dashlane/tap/dashlane-cli
-    else
-      if command -v brew &> /dev/null; then
-        brew install dashlane/tap/dashlane-cli
-      else
-        mkdir -p "$HOME/.local/bin"
-        curl -L https://github.com/Dashlane/dashlane-cli/releases/latest/download/dashlane-cli-linux-x64 -o "$HOME/.local/bin/dcli"
-        chmod +x "$HOME/.local/bin/dcli"
-      fi
-    fi
-  fi
-fi
-
-echo "✅ Dotfiles installation complete! Dropping into Zsh..."
+echo "✅ Installation complete! Please restart your terminal."
 exec zsh -l
