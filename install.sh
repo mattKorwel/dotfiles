@@ -109,18 +109,6 @@ if [[ -f "$MISE_BIN" ]]; then
   echo "📡 Configuring Mise & Installing Tools (Node 24, Gemini, etc.)..."
   "$MISE_BIN" trust "$DOTFILES_DIR"
   "$MISE_BIN" install
-
-  # --- GCloud Detection & Setup ---
-  if ! command -v gcloud &>/dev/null; then
-    echo "📡 GCloud not found. Installing via Mise..."
-    "$MISE_BIN" use -g gcloud@latest
-  else
-    GCLOUD_PATH=$(which gcloud)
-    if [[ "$GCLOUD_PATH" != *"/mise/"* ]]; then
-      echo "💡 Detected system/corporate GCloud at $GCLOUD_PATH. Telling Mise to use it..."
-      "$MISE_BIN" use -g gcloud@system
-    fi
-  fi
 fi
 
 # --- 4. GitHub & Private Extensions ---
