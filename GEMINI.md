@@ -48,19 +48,19 @@
   - **Admin**: `Alt+Shift+R` reload, `Alt+Shift+Q` stop.
 
 ### macOS (AeroSpace)
-- **Config Path**: `~/.aerospace.toml`.
+- **Config Path**: `~/.aerospace.toml` (linked from `.config/aerospace/aerospace.toml`).
 - **Monitor**: BenQ RD320U (Main), Built-in Retina Display (Secondary).
 - **Workspaces**:
   - `Dev`: Assigned to BenQ (Alt+6).
-  - `Communications`: Assigned to Built-in Display (Alt+7).
-  - `Personal`: Assigned to Built-in Display (Alt+8).
+  - `Communications`: Assigned to Built-in Display (Alt+8).
+  - `Personal`: Assigned to Built-in Display (Alt+9).
 - **Keybindings**:
   - **Focus**: `Alt+I/K/J/L` (up/down/left/right).
   - **Move**: `Alt+Shift+I/K/J/L` (up/down/left/right).
   - **Monitors**: `Alt+.` / `Alt+,` focus next/prev, `Alt+Shift+.` / `Alt+Shift+,` move window.
   - **Layouts**: `Alt+F` fullscreen, `Alt+S` accordion, `Alt+T` float, `Alt+[` / `Alt+]` cycle stack focus.
-  - **Workspaces**: `Alt+1-5` (Generic), `Alt+6-8` (Dev, Communications, Personal).
-  - **Launchers**: `Alt+Enter` iTerm, `Alt+B` Google Chrome.
+  - **Workspaces**: `Alt+1-5` (Generic), `Alt+6, 8, 9` (Dev, Communications, Personal). `Alt+7` reserved for private extensions.
+  - **Launchers**: `Alt+Enter` iTerm, `Alt+B` Google Chrome (Work), `Alt+G` Google Chrome (Personal).
   - **Close**: `Alt+Y`.
   - **Admin**: `Alt+Shift+R` reload, `Alt+Shift+;` service mode.
 
@@ -82,7 +82,11 @@
 - **ADR 002: Shell-Based WM Control**: Added `start-wm` and `stop-wm` to the PowerShell profile to manage the `komorebi` and `whkd` lifecycle cleanly.
 - **ADR 003: Robust PSReadLine**: Updated profile with environment detection to prevent prediction/Vi-mode errors in non-interactive or non-VT shells.
 - **ADR 004: Cross-Platform Tiling**: Adopted AeroSpace on macOS to achieve parity with Komorebi on Windows using a similar cardinal navigation and workspace logic.
+- **ADR 005: Dual-Repo Extension Strategy**: Separated dotfiles into a public base repo and a private extension repo (`dotfiles-private`). Used a modular hook system in shell profiles to load sensitive/corporate configurations only on authorized machines.
+- **ADR 006: Structural Consolidation**: Moved all shell profiles to a `profiles/` directory and standalone config files to `.config/` subdirectories to clean the root and align with modern XDG-like conventions.
 
 ## 🚀 Pending / Next Steps
 - [x] Test cross-platform parity for `komorebi-for-mac` (Fulfilled via AeroSpace).
+- [x] Implement Dual-Repo Privacy Strategy.
+- [x] Consolidate repository structure (Profiles/Config).
 - [ ] Fine-tune app-specific rules in `applications.json` for Zen/Slack/WhatsApp.
