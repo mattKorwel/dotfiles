@@ -119,4 +119,7 @@ _orbit() {
   _describe 'orbit' commands
 }
 compdef _orbit orbit
-# End Gemini Orbit Shell Integration
+# --- 8. Private Extensions Hook ---
+# Load private/corporate configurations if they exist
+PRIVATE_BOOTSTRAP="$HOME/dev/dotfiles-private/bootstrap.sh"
+[[ -f "$PRIVATE_BOOTSTRAP" ]] && source "$PRIVATE_BOOTSTRAP"
