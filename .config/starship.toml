@@ -3,8 +3,13 @@ add_newline = true
 
 # The main prompt layout
 format = """
-$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python$time
+$hostname$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python$time
 $character"""
+
+[hostname]
+ssh_only = false
+style = "bold #ff5f00"
+format = "[$hostname]($style) "
 
 [fill]
 symbol = "─"
