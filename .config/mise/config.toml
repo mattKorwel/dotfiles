@@ -5,7 +5,7 @@ starship = "latest"
 zoxide = "latest"
 fzf = "latest"
 gh = "latest"
-"npm:@google/gemini-cli@nightly" = "latest"
+"npm:@google/gemini-cli" = "nightly"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
