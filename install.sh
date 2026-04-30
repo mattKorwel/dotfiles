@@ -38,7 +38,7 @@ if [ ! -d "$DOTFILES_DIR/.git" ]; then
   git clone "$REPO_URL" "$DOTFILES_DIR"
 fi
 
-# --- 2. Symlinks: Pre-requisite for Tool Config ---
+# --- 2. Symlinks ---
 
 echo "🔗 Setting up core symlinks..."
 
@@ -78,8 +78,6 @@ ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
 
 # --- 3. Tools: Mise & Runtimes ---
 
-pkg_install curl
-
 # Ensure local bin exists
 mkdir -p "$HOME/.local/bin"
 
@@ -95,29 +93,19 @@ if [[ -f "$MISE_BIN" ]]; then
   export MISE_YES=1
   export PATH="$HOME/.local/bin:$PATH"
   
-  echo "📡 Configuring Mise & Installing Tools (Node 24, Dashlane, etc.)..."
-  # Trust the repo directory so mise picks up the config
+  echo "📡 Configuring Mise & Installing Tools (Node 24, Dashlane, Gemini, etc.)..."
   "$MISE_BIN" trust "$DOTFILES_DIR"
-  # Since symlinks are already in place, mise will find ~/.config/mise/config.toml
   "$MISE_BIN" install
-  
-  echo "📡 Installing Gemini CLI (@nightly)..."
-  "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly
 
-  # --- GCloud Component Management ---
-  if "$MISE_BIN" exec -- gcloud version &> /dev/null; then
-    GCLOUD_PATH=$("$MISE_BIN" which gcloud)
-    if [[ "$GCLOUD_PATH" != *"/google/bin"* ]] && [[ "$GCLOUD_PATH" != *"/Caskroom"* ]]; then
-      read -p "❓ Install optional GCloud components? (y/n) " -n 1 -r
-      echo
-      if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "📡 Installing GCloud components..."
-        export CLOUDSDK_CORE_DISABLE_PROMPTS=1
-        COMPONENTS=$(gcloud components list --filter="state.name='Not Installed'" --format="value(id)" 2>/dev/null || true)
-        if [[ -n "$COMPONENTS" ]]; then
-           echo "$COMPONENTS" | xargs -r gcloud components install --quiet
-        fi
-      fi
+  # --- GCloud Detection & Setup ---
+  if ! command -v gcloud &>/dev/null; then
+    echo "📡 GCloud not found. Installing via Mise..."
+    "$MISE_BIN" use -g gcloud@latest
+  else
+    GCLOUD_PATH=$(which gcloud)
+    if [[ "$GCLOUD_PATH" != *"/mise/"* ]]; then
+      echo "💡 Detected system/corporate GCloud at $GCLOUD_PATH. Telling Mise to use it..."
+      "$MISE_BIN" use -g gcloud@system
     fi
   fi
 fi

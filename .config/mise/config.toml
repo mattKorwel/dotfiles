@@ -6,7 +6,7 @@ zoxide = "latest"
 fzf = "latest"
 gh = "latest"
 "npm:@dashlane/cli" = "latest"
-gcloud = "latest"
+"npm:@google/gemini-cli@nightly" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
