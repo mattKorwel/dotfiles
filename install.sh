@@ -72,9 +72,30 @@ else
   fi
 fi
 
+# --- 2. Runtime & Tool Installation (Mise) ---
+
+echo "📡 Configuring Mise (Runtimes & GCloud)..."
+# Find mise binary
+MISE_BIN="mise"
+if [[ -f "$HOME/.local/bin/mise" ]]; then
+  MISE_BIN="$HOME/.local/bin/mise"
+elif [[ -f "/usr/local/bin/mise" ]]; then
+  MISE_BIN="/usr/local/bin/mise"
+elif [[ -f "/opt/homebrew/bin/mise" ]]; then
+  MISE_BIN="/opt/homebrew/bin/mise"
+fi
+
+if command -v "$MISE_BIN" &> /dev/null; then
+  export MISE_YES=1
+  "$MISE_BIN" trust "$DOTFILES_DIR"
+  "$MISE_BIN" install --dir "$DOTFILES_DIR"
+else
+  echo "⚠️ Mise not found. Runtimes and GCloud install skipped."
+fi
+
 ensure_zsh
 
-# --- 2. Symlinks & Configuration ---
+# --- 3. Symlinks & Configuration ---
 
 echo "🔗 Setting up symlinks from: $DOTFILES_DIR"
 
