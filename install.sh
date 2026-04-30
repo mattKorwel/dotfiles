@@ -91,7 +91,7 @@ fi
 if command -v "$MISE_BIN" &> /dev/null; then
   export MISE_YES=1
   "$MISE_BIN" trust "$DOTFILES_DIR"
-  "$MISE_BIN" install --dir "$DOTFILES_DIR"
+  (cd "$DOTFILES_DIR" && "$MISE_BIN" install)
 else
   echo "⚠️ Mise not found. Runtimes and GCloud install skipped."
 fi
