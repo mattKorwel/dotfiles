@@ -52,6 +52,9 @@ if [ ! -d "$DOTFILES_DIR/.git" ]; then
   echo "📡 Bootstrapping: Cloning dotfiles to $DOTFILES_DIR..."
   mkdir -p "$(dirname "$DOTFILES_DIR")"
   git clone "$REPO_URL" "$DOTFILES_DIR"
+else
+  echo "📡 Updating dotfiles..."
+  git -C "$DOTFILES_DIR" pull --ff-only
 fi
 
 # --- 2. Symlinks & Configuration ---
@@ -184,6 +187,9 @@ if [ ! -d "$PRIVATE_DIR" ]; then
     echo "📡 Cloning private dotfiles..."
     "$MISE_BIN" exec -- gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR"
   fi
+else
+  echo "📡 Updating private dotfiles..."
+  git -C "$PRIVATE_DIR" pull --ff-only
 fi
 
 # Run private installation logic if directory exists
