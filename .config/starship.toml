@@ -53,7 +53,7 @@ format = "[$symbol(${pyenv_prefix}${version})](bold #ffcc00) "
 
 [hostname]
 ssh_only = false
-style = "bold blue"
+style = "bold #00ffff"
 format = "[$hostname]($style) "
 
 [character]
