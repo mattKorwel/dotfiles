@@ -36,7 +36,7 @@ alias grep='grep --color=auto'
 export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
 
 # Load Gemini CLI Shortcuts & Functions
-[[ -f ~/.gemini-scripts/gemini-functions.sh ]] && . ~/.gemini-scripts/gemini-functions.sh
+[[ -f ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh ]] && . ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh
 
 # --- 4. Private Extensions Hook ---
 # Load private/corporate configurations if they exist

@@ -95,8 +95,8 @@ if [[ -d "$HOME/.local/share/mise/installs/gcloud" ]]; then
 fi
 
 # --- 7. Custom Scripts & Integrations ---
-# Load Gemini CLI Shortcuts & Functions (Symlinked by install.sh)
-[[ -f ~/.gemini-scripts/gemini-functions.sh ]] && source ~/.gemini-scripts/gemini-functions.sh
+# Load Gemini CLI Shortcuts & Functions
+[[ -f ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh ]] && source ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh
 
 export PATH="$HOME/dev/bin:$PATH"
 

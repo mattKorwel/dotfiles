@@ -7,12 +7,12 @@
 - **Keyboard**: ZSA Voyager (Configured to utilize `Alt` as the primary WM modifier).
 
 ## 🛠 Tooling Stack
-- **Runtimes**: `mise` (node, npm, etc).
-- **Shell UX**: `starship` (prompt), `zoxide` (navigation), `fzf` (fuzzy finding).
+- **Runtimes**: `mise` (node 24, go, gcloud, etc).
+- **Core Tools (Mise-managed)**: `starship` (prompt), `zoxide` (navigation), `fzf` (fuzzy finding), `gh` (github cli), `dcli` (dashlane cli).
+- **Shell UX**: Pure Zsh/Bash with direct script sourcing.
 - **Tiling WM**: `komorebi` (Windows) / `AeroSpace` (macOS).
-- **Browsers**: Zen Browser (Primary).
 
-## 🔗 Symlink Map (Managed via `install.ps1` / `install.sh`)
+## 🔗 Symlink Map (Managed via `install.sh`)
 | Source (in `~/dotfiles`) | Destination |
 | :--- | :--- |
 | `profiles/Microsoft.PowerShell_profile.ps1` | `$PROFILE` |
@@ -23,6 +23,9 @@
 | `.config/aerospace/aerospace.toml` | `~/.aerospace.toml` |
 | `profiles/.zshrc` | `~/.zshrc` |
 | `profiles/.bashrc` | `~/.bashrc` |
+| `.gemini/settings.json` | `~/.gemini/settings.json` |
+
+*Note: Gemini scripts are sourced directly from `~/dev/dotfiles/.gemini-scripts/` in shell profiles to minimize symlink clutter.*
 
 ## 🪟 Window Management Logic (Komorebi + AHK / AeroSpace)
 
