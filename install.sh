@@ -56,7 +56,6 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
 fi
 
 # Ensure we are working with the correct directory
-# If run via curl, this might be empty, but standard runs will use script path
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)"
 DOTFILES_DIR="${SCRIPT_DIR:-$TARGET_DIR}"
 
@@ -66,71 +65,55 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   if ! command -v brew &> /dev/null; then
     echo "⚠️ Homebrew not found. Please install it first: https://brew.sh/"
   else
-    echo "📡 Ensuring core tools are present via Homebrew (git, starship, mise, zoxide, etc.)..."
-    brew install git starship mise zoxide fzf zsh-autosuggestions zsh-syntax-highlighting gh
+    echo "📡 Ensuring core tools are present via Homebrew (git, starship, zoxide, etc.)..."
+    # REMOVED mise from brew install list to favor standalone
+    brew install git starship zoxide fzf zsh-autosuggestions zsh-syntax-highlighting gh
   fi
 else
   echo "📡 Checking/Installing core tools (Linux/WSL)..."
   sudo apt-get update
-  
-  # Ensure Git and other essentials are present
-  sudo apt-get install -y git curl wget
-  if ! command -v gh &> /dev/null; then
-    echo "📦 Adding GitHub CLI repository..."
-    (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
-    && sudo mkdir -p -m 755 /etc/apt/keyrings \
-    && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-    && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-    sudo apt-get update
-  fi
+  sudo apt-get install -y git curl wget zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh
+fi
 
-  sudo apt-get install -y zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh wslu
-  
-  # Ensure local bin exists
-  mkdir -p "$HOME/.local/bin"
+# Ensure local bin exists
+mkdir -p "$HOME/.local/bin"
 
-  # Starship (Quiet install)
-  if ! command -v starship &> /dev/null; then
-    echo "🚀 Installing Starship..."
-    curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir "$HOME/.local/bin" > /dev/null
-  fi
-  
-  # Mise (Quiet install)
-  if [[ ! -f "$HOME/.local/bin/mise" ]]; then
-    echo "🚀 Installing Mise..."
-    curl https://mise.jdx.dev/install.sh | sh > /dev/null
-  fi
+# Starship (Quiet install)
+if ! command -v starship &> /dev/null; then
+  echo "🚀 Installing Starship..."
+  curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir "$HOME/.local/bin" > /dev/null
+fi
+
+# Mise (Quiet install) - STANDALONE VERSION
+if [[ ! -f "$HOME/.local/bin/mise" ]]; then
+  echo "🚀 Installing Mise..."
+  curl https://mise.jdx.dev/install.sh | sh > /dev/null
 fi
 
 # --- 3. Runtime & Tool Installation (Mise) ---
 
 echo "📡 Configuring Mise (Runtimes & GCloud)..."
 # Find mise binary
-MISE_BIN="mise"
-if [[ -f "$HOME/.local/bin/mise" ]]; then
-  MISE_BIN="$HOME/.local/bin/mise"
-elif [[ -f "/usr/local/bin/mise" ]]; then
-  MISE_BIN="/usr/local/bin/mise"
-elif [[ -f "/opt/homebrew/bin/mise" ]]; then
-  MISE_BIN="/opt/homebrew/bin/mise"
-fi
+MISE_BIN="$HOME/.local/bin/mise"
 
-if command -v "$MISE_BIN" &> /dev/null; then
+if [[ -f "$MISE_BIN" ]]; then
   export MISE_YES=1
+  # FIX 1: Activate mise for this script session so npm works
+  export PATH="$HOME/.local/bin:$PATH"
+  eval "$($MISE_BIN activate bash)"
+
   "$MISE_BIN" trust "$DOTFILES_DIR"
   (cd "$DOTFILES_DIR" && "$MISE_BIN" install)
   
-  # Install Gemini CLI globally
+  # FIX 2: Use mise exec to ensure npm environment is loaded
   echo "📡 Installing Gemini CLI (@nightly)..."
   "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
 
   # --- GCloud Component Management ---
-  if "$MISE_BIN" which gcloud &> /dev/null; then
+  # FIX 3: Check gcloud status via mise exec
+  if "$MISE_BIN" exec -- gcloud version &> /dev/null; then
     GCLOUD_PATH=$("$MISE_BIN" which gcloud)
     
-    # Check if this is a managed/corporate installation (e.g. in /google/bin or /usr/local/Caskroom)
-    # Managed installs usually don't allow component updates via the CLI
     if [[ "$GCLOUD_PATH" == *"/google/bin"* ]] || [[ "$GCLOUD_PATH" == *"/Caskroom"* ]]; then
       echo "💡 Detected managed/corporate GCloud installation ($GCLOUD_PATH). Skipping component management."
     else
