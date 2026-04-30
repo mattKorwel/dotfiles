@@ -148,6 +148,11 @@ if [[ -d "$GCLOUD_SDK_ROOT" ]]; then
   echo "source '$GCLOUD_SDK_ROOT/completion.zsh.inc'" > "$ZSH_COMP_DIR/gcloud.zsh"
 fi
 
+# Usage
+if command -v usage &>/dev/null; then
+  usage completion zsh > "$ZSH_COMP_DIR/_usage"
+fi
+
 # --- 5. Tools: Mise & Runtimes ---
 
 # Mise (Quiet install) - STANDALONE VERSION
