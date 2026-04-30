@@ -218,4 +218,5 @@ if ! command -v dcli &> /dev/null; then
   fi
 fi
 
-echo "✅ Dotfiles installation complete! Please restart your shell."
+echo "✅ Dotfiles installation complete! Dropping into Zsh..."
+exec zsh -l
