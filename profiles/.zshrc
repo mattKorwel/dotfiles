@@ -88,12 +88,6 @@ alias grep='grep --color=auto'
 export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
 [[ -d "$HOME/.antigravity/antigravity/bin" ]] && export PATH="$PATH:$HOME/.antigravity/antigravity/bin"
 
-# GCloud Shell Completion (Mise-managed)
-if [[ -d "$HOME/.local/share/mise/installs/gcloud" ]]; then
-  GCLOUD_BIN_DIR=$(ls -1d $HOME/.local/share/mise/installs/gcloud/* 2>/dev/null | tail -n1)
-  [[ -f "$GCLOUD_BIN_DIR/completion.zsh.inc" ]] && source "$GCLOUD_BIN_DIR/completion.zsh.inc"
-fi
-
 # --- 7. Custom Scripts & Integrations ---
 # Load Gemini CLI Shortcuts & Functions
 [[ -f ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh ]] && source ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh
