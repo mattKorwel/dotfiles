@@ -3,7 +3,7 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     Write-Error "Please run this script as Administrator!"
     break
 }
-$DOTFILES_DIR = $PSScriptRoot
+$DOTFILES_DIR = Split-Path $PSScriptRoot -Parent
 Write-Host "--- Starting Setup: AI Dev Spec (Sequim v5.7) ---" -ForegroundColor Green
 
 # --- 2. Winget Bootstrap (The Fix for 0x8a15005e) ---

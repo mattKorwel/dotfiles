@@ -4,7 +4,8 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 }
 
 $UserName = "levi"
-$SRC = "C:\dev\dotfiles" # Source of your Levi_profile.ps1 and .config
+$DOTFILES_ROOT = Split-Path $PSScriptRoot -Parent
+$PRIVATE_ROOT = "$HOME\dev\dotfiles-private"
 $LEVI_HOME = "C:\Users\$UserName"
 
 Write-Host "--- Starting Setup: Levi Gaming & Art Spec (v1.3) ---" -ForegroundColor Green
@@ -63,14 +64,20 @@ Write-Host "--- Deploying Local Profile ---" -ForegroundColor Yellow
 $DestProfile = "$LEVI_HOME\Documents\PowerShell"
 if (!(Test-Path $DestProfile)) { New-Item -ItemType Directory -Path $DestProfile -Force | Out-Null }
 
-if (Test-Path "$SRC\Levi_profile.ps1") {
-    Copy-Item "$SRC\Levi_profile.ps1" -Destination "$DestProfile\Microsoft.PowerShell_profile.ps1" -Force
+# Check private repo first, then fallback to public root
+$ProfileSource = Join-Path $PRIVATE_ROOT "Levi_profile.ps1"
+if (!(Test-Path $ProfileSource)) { $ProfileSource = Join-Path $DOTFILES_ROOT "Levi_profile.ps1" }
+
+if (Test-Path $ProfileSource) {
+    Copy-Item $ProfileSource -Destination "$DestProfile\Microsoft.PowerShell_profile.ps1" -Force
 }
 
 $DestConfig = "$LEVI_HOME\.config"
 if (!(Test-Path $DestConfig)) { New-Item -ItemType Directory -Path $DestConfig -Force | Out-Null }
-if (Test-Path "$SRC\.config\starship.toml") {
-    Copy-Item "$SRC\.config\starship.toml" -Destination "$DestConfig\starship.toml" -Force
+$StarshipSource = Join-Path $DOTFILES_ROOT ".config\starship.toml"
+
+if (Test-Path $StarshipSource) {
+    Copy-Item $StarshipSource -Destination "$DestConfig\starship.toml" -Force
 }
 
 # Fix Ownership so Levi can use them
