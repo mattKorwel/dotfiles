@@ -1,4 +1,9 @@
-# --- 1. Environment Detection ---
+# --- 1. Private Extensions Hook (Load Environment Variables First) ---
+# Load private/corporate configurations if they exist
+PRIVATE_BOOTSTRAP="$HOME/dev/dotfiles-private/bootstrap.sh"
+[[ -f "$PRIVATE_BOOTSTRAP" ]] && source "$PRIVATE_BOOTSTRAP"
+
+# --- 2. Environment Detection ---
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS (Homebrew)
   [[ -f /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -103,8 +108,3 @@ export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
 [[ -f ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh ]] && source ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh
 
 export PATH="$HOME/dev/bin:$PATH"
-
-# --- 8. Private Extensions Hook ---
-# Load private/corporate configurations if they exist
-PRIVATE_BOOTSTRAP="$HOME/dev/dotfiles-private/bootstrap.sh"
-[[ -f "$PRIVATE_BOOTSTRAP" ]] && source "$PRIVATE_BOOTSTRAP"
