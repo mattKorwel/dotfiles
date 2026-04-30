@@ -222,3 +222,9 @@ function gw {
     )
     ssh -t cli "tmux attach -t $SessionName || tmux new -s $SessionName"
 }
+
+# --- 7. Private Extensions Hook ---
+$privateBootstrap = Join-Path $HOME "dev\dotfiles-private\bootstrap.ps1"
+if (Test-Path $privateBootstrap) {
+    . $privateBootstrap
+}
