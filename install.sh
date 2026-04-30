@@ -72,7 +72,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 else
   echo "📡 Checking/Installing core tools (Linux/WSL)..."
   sudo apt-get update
-  sudo apt-get install -y git curl wget zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh wslu
+  sudo apt-get install -y git curl wget zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh
 fi
 
 # Ensure local bin exists
