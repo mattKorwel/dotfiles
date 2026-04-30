@@ -17,15 +17,15 @@ default-root-container-orientation = 'auto'
 
 # Persistent Workspaces
 # Ensures named workspaces exist even when empty
-persistent-workspaces = ['Dev', 'Google', 'Communications', 'Personal']
+persistent-workspaces = ['6-Dev', '7-Google', '8-Comms', '9-Pers']
 
 # Monitor Assignment
 # All workspaces consolidated to the primary monitor
 [workspace-to-monitor-force-assignment]
-Dev = 'BenQ RD320U'
-Google = 'BenQ RD320U'
-Communications = 'BenQ RD320U'
-Personal = 'BenQ RD320U'
+'6-Dev' = 'BenQ RD320U'
+'7-Google' = 'BenQ RD320U'
+'8-Comms' = 'BenQ RD320U'
+'9-Pers' = 'BenQ RD320U'
 
 # Mouse follows focus
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
@@ -81,10 +81,10 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-3 = 'workspace 3'
     alt-4 = 'workspace 4'
     alt-5 = 'workspace 5'
-    alt-6 = 'workspace Dev'
-    alt-7 = 'workspace Google'
-    alt-8 = 'workspace Communications'
-    alt-9 = 'workspace Personal'
+    alt-6 = 'workspace 6-Dev'
+    alt-7 = 'workspace 7-Google'
+    alt-8 = 'workspace 8-Comms'
+    alt-9 = 'workspace 9-Pers'
 
     alt-shift-n = 'move-node-to-workspace --wrap-around next'
     alt-shift-p = 'move-node-to-workspace --wrap-around prev'
@@ -94,10 +94,10 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-shift-3 = 'move-node-to-workspace 3'
     alt-shift-4 = 'move-node-to-workspace 4'
     alt-shift-5 = 'move-node-to-workspace 5'
-    alt-shift-6 = 'move-node-to-workspace Dev'
-    alt-shift-7 = 'move-node-to-workspace Google'
-    alt-shift-8 = 'move-node-to-workspace Communications'
-    alt-shift-9 = 'move-node-to-workspace Personal'
+    alt-shift-6 = 'move-node-to-workspace 6-Dev'
+    alt-shift-7 = 'move-node-to-workspace 7-Google'
+    alt-shift-8 = 'move-node-to-workspace 8-Comms'
+    alt-shift-9 = 'move-node-to-workspace 9-Pers'
 
     # --- Close Window (Matched to Alt+y) ---
     alt-y = 'close'
@@ -126,4 +126,4 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 [[on-window-detected]]
 if.app-id = 'com.google.Chrome'
 if.window-title-regex-substring = 'Matt \(Personal\)'
-run = 'move-node-to-workspace Personal'
+run = 'move-node-to-workspace 9-Pers'
