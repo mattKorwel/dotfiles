@@ -7,6 +7,7 @@ REPO_URL="https://github.com/mattkorwel/dotfiles.git"
 DOTFILES_DIR="$HOME/dev/dotfiles"
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
+BACKUP_DIR="$DOTFILES_DIR/.backups"
 
 echo "🚀 Initializing Dotfiles from $DOTFILES_DIR..."
 
@@ -29,6 +30,21 @@ pkg_install() {
   fi
 }
 
+backup_and_link() {
+  local src=$1
+  local dst=$2
+  
+  if [[ -f "$dst" && ! -L "$dst" ]]; then
+    mkdir -p "$BACKUP_DIR"
+    local filename=$(basename "$dst")
+    echo "💾 Backing up $filename to $BACKUP_DIR"
+    mv "$dst" "$BACKUP_DIR/${filename}.bak.$(date +%F_%T)"
+  fi
+
+  mkdir -p "$(dirname "$dst")"
+  ln -sf "$src" "$dst"
+}
+
 # --- 1. Bootstrap: Repository ---
 
 if [ ! -d "$DOTFILES_DIR/.git" ]; then
@@ -38,52 +54,49 @@ if [ ! -d "$DOTFILES_DIR/.git" ]; then
   git clone "$REPO_URL" "$DOTFILES_DIR"
 fi
 
-# --- 2. Symlinks ---
+# --- 2. Symlinks & Configuration ---
 
-echo "🔗 Setting up core symlinks..."
+echo "🔗 Setting up symlinks..."
 
 # Shell Profiles
 for f in .zshrc .bashrc .bash_profile; do
-  if [[ -f "$HOME/$f" && ! -L "$HOME/$f" ]]; then
-    mv "$HOME/$f" "$HOME/$f.bak.$(date +%F_%T)"
+  if [[ -f "$DOTFILES_DIR/profiles/$f" ]]; then
+    backup_and_link "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
   fi
-  ln -sf "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
 done
 
-# Config Directory Structure
-mkdir -p ~/.config/mise ~/.config/komorebi ~/.config/tmux ~/.config/aerospace ~/.config/windows-terminal ~/.config/git
+# Cross-Platform Configs
+backup_and_link "$DOTFILES_DIR/.config/mise/config.toml" "$HOME/.config/mise/config.toml"
+backup_and_link "$DOTFILES_DIR/.config/starship.toml"    "$HOME/.config/starship.toml"
+backup_and_link "$DOTFILES_DIR/.config/git/gitconfig.shared" "$HOME/.config/git/gitconfig.shared"
+backup_and_link "$DOTFILES_DIR/.gemini/settings.json"    "$HOME/.gemini/settings.json"
 
-# Core Configs
-ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
-ln -sf "$DOTFILES_DIR/.config/starship.toml" ~/.config/starship.toml
-ln -sf "$DOTFILES_DIR/.config/tmux/tmux.conf" ~/.tmux.conf
-ln -sf "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
-ln -sf "$DOTFILES_DIR/.config/windows-terminal/settings.json" ~/.config/windows-terminal/settings.json
-ln -sf "$DOTFILES_DIR/.config/git/gitconfig.shared" ~/.config/git/gitconfig.shared
-
-# Git Configuration
-if [[ ! -f ~/.gitconfig ]]; then
-  touch ~/.gitconfig
+# macOS Specific
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  backup_and_link "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
 fi
-if ! grep -q "gitconfig.shared" ~/.gitconfig; then
+
+# Unix/Linux Specific (Tmux)
+if [[ "$OSTYPE" == "darwin"* || "$OSTYPE" == "linux-gnu"* ]]; then
+  backup_and_link "$DOTFILES_DIR/.config/tmux/tmux.conf" "$HOME/.tmux.conf"
+fi
+
+# Git Configuration (Local Include)
+# This appends a pointer to your local ~/.gitconfig so it uses your shared settings
+if [[ ! -f "$HOME/.gitconfig" ]]; then
+  touch "$HOME/.gitconfig"
+fi
+if ! grep -q "gitconfig.shared" "$HOME/.gitconfig"; then
+  echo "📝 Including shared git config in $HOME/.gitconfig"
   git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
 fi
 
-# Gemini Config
-mkdir -p ~/.gemini
-if [[ -f ~/.gemini/settings.json && ! -L ~/.gemini/settings.json ]]; then
-  mv ~/.gemini/settings.json ~/.gemini/settings.json.bak.$(date +%F_%T)
-fi
-ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
-
 # --- 3. Tools: Mise & Runtimes ---
-
-# Ensure local bin exists
-mkdir -p "$HOME/.local/bin"
 
 # Mise (Quiet install) - STANDALONE VERSION
 if [[ ! -f "$HOME/.local/bin/mise" ]]; then
   echo "🚀 Installing Mise..."
+  mkdir -p "$HOME/.local/bin"
   curl https://mise.jdx.dev/install.sh | sh > /dev/null
 fi
 
@@ -93,7 +106,7 @@ if [[ -f "$MISE_BIN" ]]; then
   export MISE_YES=1
   export PATH="$HOME/.local/bin:$PATH"
   
-  echo "📡 Configuring Mise & Installing Tools (Node 24, Dashlane, Gemini, etc.)..."
+  echo "📡 Configuring Mise & Installing Tools (Node 24, Gemini, etc.)..."
   "$MISE_BIN" trust "$DOTFILES_DIR"
   "$MISE_BIN" install
 
