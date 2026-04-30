@@ -4,14 +4,7 @@ set -e
 
 # --- Configuration ---
 REPO_URL="https://github.com/mattkorwel/dotfiles.git"
-DEFAULT_TARGET="$HOME/dev/dotfiles"
-
-# If we are already inside a git repo, assume that is the dotfiles dir
-if git rev-parse --is-inside-work-tree &>/dev/null; then
-  TARGET_DIR="$(git rev-parse --show-toplevel)"
-else
-  TARGET_DIR="$DEFAULT_TARGET"
-fi
+TARGET_DIR="$HOME/dev/dotfiles"
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
 
@@ -63,7 +56,9 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
 fi
 
 # Ensure we are working with the correct directory
-DOTFILES_DIR="$TARGET_DIR"
+# If run via curl, this might be empty, but standard runs will use script path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)"
+DOTFILES_DIR="${SCRIPT_DIR:-$TARGET_DIR}"
 
 # --- 2. Core Tooling Installation ---
 
@@ -71,7 +66,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   if ! command -v brew &> /dev/null; then
     echo "⚠️ Homebrew not found. Please install it first: https://brew.sh/"
   else
-    echo "📡 Installing core tools via Homebrew..."
+    echo "📡 Ensuring core tools are present via Homebrew (git, starship, mise, zoxide, etc.)..."
     brew install git starship mise zoxide fzf zsh-autosuggestions zsh-syntax-highlighting gh
   fi
 else
@@ -130,10 +125,26 @@ if command -v "$MISE_BIN" &> /dev/null; then
   echo "📡 Installing Gemini CLI (@nightly)..."
   "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
 
-  # Install all GCloud components
+  # --- GCloud Component Management ---
   if "$MISE_BIN" which gcloud &> /dev/null; then
-    echo "📡 Installing all Google Cloud components (this may take a while)..."
-    "$MISE_BIN" exec -- bash -c 'gcloud components list --filter="state.name=Not Installed" --format="value(id)" | xargs -r gcloud components install --quiet'
+    GCLOUD_PATH=$("$MISE_BIN" which gcloud)
+    
+    # Check if this is a managed/corporate installation (e.g. in /google/bin or /usr/local/Caskroom)
+    # Managed installs usually don't allow component updates via the CLI
+    if [[ "$GCLOUD_PATH" == *"/google/bin"* ]] || [[ "$GCLOUD_PATH" == *"/Caskroom"* ]]; then
+      echo "💡 Detected managed/corporate GCloud installation ($GCLOUD_PATH). Skipping component management."
+    else
+      read -p "❓ Would you like to install all optional GCloud components? (y/n) " -n 1 -r
+      echo
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "📡 Installing all Google Cloud components (this may take a while)..."
+        export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+        COMPONENTS=$(gcloud components list --filter="state.name='Not Installed'" --format="value(id)" 2>/dev/null || true)
+        if [[ -n "$COMPONENTS" ]]; then
+           echo "$COMPONENTS" | xargs -r gcloud components install --quiet
+        fi
+      fi
+    fi
   fi
 else
   echo "⚠️ Mise not found. Runtimes and GCloud install skipped."
