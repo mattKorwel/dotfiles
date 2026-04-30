@@ -183,13 +183,13 @@ if [ ! -d "$PRIVATE_DIR" ]; then
     fi
     echo "📡 Cloning private dotfiles..."
     "$MISE_BIN" exec -- gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR"
-    
-    # Run private install script if it exists
-    if [[ -f "$PRIVATE_DIR/install.sh" ]]; then
-      echo "🛠️ Running private installation script..."
-      bash "$PRIVATE_DIR/install.sh"
-    fi
   fi
+fi
+
+# Run private installation logic if directory exists
+if [[ -d "$PRIVATE_DIR" && -f "$PRIVATE_DIR/install.sh" ]]; then
+  echo "🛠️ Running private installation script..."
+  bash "$PRIVATE_DIR/install.sh"
 fi
 
 echo "✅ Done! Reloading shell..."
