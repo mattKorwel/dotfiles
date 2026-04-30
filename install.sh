@@ -192,4 +192,24 @@ if command -v gh &> /dev/null; then
   fi
 fi
 
+# --- 6. Optional: Dashlane CLI ---
+if ! command -v dcli &> /dev/null; then
+  read -p "❓ Would you like to install Dashlane CLI? (y/n) " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "📡 Installing Dashlane CLI..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      brew install dashlane/tap/dashlane-cli
+    else
+      if command -v brew &> /dev/null; then
+        brew install dashlane/tap/dashlane-cli
+      else
+        mkdir -p "$HOME/.local/bin"
+        curl -L https://github.com/Dashlane/dashlane-cli/releases/latest/download/dashlane-cli-linux-x64 -o "$HOME/.local/bin/dcli"
+        chmod +x "$HOME/.local/bin/dcli"
+      fi
+    fi
+  fi
+fi
+
 echo "✅ Dotfiles installation complete! Please restart your shell."
