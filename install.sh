@@ -4,7 +4,14 @@ set -e
 
 # --- Configuration ---
 REPO_URL="https://github.com/mattkorwel/dotfiles.git"
-TARGET_DIR="$HOME/dev/dotfiles"
+DEFAULT_TARGET="$HOME/dev/dotfiles"
+
+# If we are already inside a git repo, assume that is the dotfiles dir
+if git rev-parse --is-inside-work-tree &>/dev/null; then
+  TARGET_DIR="$(git rev-parse --show-toplevel)"
+else
+  TARGET_DIR="$DEFAULT_TARGET"
+fi
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
 
