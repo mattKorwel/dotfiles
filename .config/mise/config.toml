@@ -5,7 +5,6 @@ starship = "latest"
 zoxide = "latest"
 fzf = "latest"
 gh = "latest"
-"npm:@dashlane/cli" = "latest"
 "npm:@google/gemini-cli@nightly" = "latest"
 
 [settings]

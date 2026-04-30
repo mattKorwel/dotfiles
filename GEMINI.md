@@ -8,7 +8,7 @@
 
 ## 🛠 Tooling Stack
 - **Runtimes**: `mise` (node 24, go, gcloud, etc).
-- **Core Tools (Mise-managed)**: `starship` (prompt), `zoxide` (navigation), `fzf` (fuzzy finding), `gh` (github cli), `dcli` (dashlane cli).
+- **Core Tools (Mise-managed)**: `starship` (prompt), `zoxide` (navigation), `fzf` (fuzzy finding), `gh` (github cli).
 - **Shell UX**: Pure Zsh/Bash with direct script sourcing.
 - **Tiling WM**: `komorebi` (Windows) / `AeroSpace` (macOS).
 
