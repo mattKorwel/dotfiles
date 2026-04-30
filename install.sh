@@ -73,7 +73,7 @@ backup_and_link "$DOTFILES_DIR/.gemini/settings.json"    "$HOME/.gemini/settings
 
 # macOS Specific
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  backup_and_link "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
+  backup_and_link "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
 fi
 
 # Unix/Linux Specific (Tmux)
@@ -149,9 +149,7 @@ if [[ -d "$GCLOUD_SDK_ROOT" ]]; then
 fi
 
 # Usage
-if command -v usage &>/dev/null; then
-  usage completion zsh > "$ZSH_COMP_DIR/_usage"
-fi
+# (Skipping automated completion generation for 'usage' tool due to complex flags)
 
 # --- 5. Tools: Mise & Runtimes ---
 
