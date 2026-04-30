@@ -118,6 +118,10 @@ if command -v "$MISE_BIN" &> /dev/null; then
   export MISE_YES=1
   "$MISE_BIN" trust "$DOTFILES_DIR"
   (cd "$DOTFILES_DIR" && "$MISE_BIN" install)
+  
+  # Install Gemini CLI globally
+  echo "📡 Installing Gemini CLI (@nightly)..."
+  "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
 else
   echo "⚠️ Mise not found. Runtimes and GCloud install skipped."
 fi
@@ -184,19 +188,6 @@ if command -v gh &> /dev/null; then
         mkdir -p "$(dirname "$PRIVATE_DIR")"
         gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR" || echo "⚠️ Could not clone private repo. Ensure it exists at $PRIVATE_REPO_URL"
       fi
-    fi
-
-    echo "📡 Cloning Gemini ecosystem repositories..."
-    # Gemini CLI
-    if [ ! -d ~/dev/gemini-cli/main ]; then
-      mkdir -p ~/dev/gemini-cli
-      gh repo clone google-gemini/gemini-cli ~/dev/gemini-cli/main
-    fi
-
-    # Gemini Orbit
-    if [ ! -d ~/dev/gemini-cli-orbit/main ]; then
-      mkdir -p ~/dev/gemini-cli-orbit
-      gh repo clone google-gemini/gemini-cli-orbit ~/dev/gemini-cli-orbit/main
     fi
   fi
 fi
