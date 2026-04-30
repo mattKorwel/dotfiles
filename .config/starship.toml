@@ -3,7 +3,7 @@ add_newline = true
 
 # The main prompt layout
 format = """
-$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python$hostname$time
+$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python${env_var.HOSTNAME_LOCAL}${env_var.HOSTNAME_WORK}${env_var.HOSTNAME_REMOTE}${env_var.HOSTNAME_ROAM}$time
 $character"""
 
 [fill]
@@ -52,9 +52,27 @@ symbol = " "
 format = "[$symbol(${pyenv_prefix}${version})](bold #ffcc00) "
 
 [hostname]
-ssh_only = false
+disabled = true
+
+[env_var.HOSTNAME_LOCAL]
+variable = "STARSHIP_HOSTNAME_LOCAL"
 style = "bold #00ffff"
-format = "[$hostname]($style) "
+format = "[$env_value]($style) "
+
+[env_var.HOSTNAME_WORK]
+variable = "STARSHIP_HOSTNAME_WORK"
+style = "bold #ffcc00"
+format = "[$env_value]($style) "
+
+[env_var.HOSTNAME_REMOTE]
+variable = "STARSHIP_HOSTNAME_REMOTE"
+style = "bold #ff5f5f"
+format = "[$env_value]($style) "
+
+[env_var.HOSTNAME_ROAM]
+variable = "STARSHIP_HOSTNAME_ROAM"
+style = "bold #5fffff"
+format = "[$env_value]($style) "
 
 [character]
 success_symbol = "[❯](bold #00ff00)"
