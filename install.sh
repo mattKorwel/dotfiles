@@ -61,6 +61,9 @@ else
 
   sudo apt-get install -y zsh fzf zoxide zsh-autosuggestions zsh-syntax-highlighting gh wslu
   
+  # Ensure local bin exists
+  mkdir -p "$HOME/.local/bin"
+
   # Starship
   if ! command -v starship &> /dev/null; then
     curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir "$HOME/.local/bin"
