@@ -91,23 +91,27 @@ if [[ ! -f "$HOME/.local/bin/mise" ]]; then
 fi
 
 # --- 3. Runtime & Tool Installation (Mise) ---
-
 echo "📡 Configuring Mise (Runtimes & GCloud)..."
-# Find mise binary
 MISE_BIN="$HOME/.local/bin/mise"
+# Find your config file (adjust name if it's .mise.toml)
+MISE_CONFIG="$DOTFILES_DIR/.config/mise/config.toml"
 
 if [[ -f "$MISE_BIN" ]]; then
   export MISE_YES=1
-  # FIX 1: Activate mise for this script session so npm works
   export PATH="$HOME/.local/bin:$PATH"
-  eval "$($MISE_BIN activate bash)"
-
-  "$MISE_BIN" trust "$DOTFILES_DIR"
-  (cd "$DOTFILES_DIR" && "$MISE_BIN" install)
   
-  # FIX 2: Use mise exec to ensure npm environment is loaded
+  # Tell mise to trust and use the specific config in your repo
+  "$MISE_BIN" trust "$MISE_CONFIG"
+  
+  echo "📦 Installing runtimes from $MISE_CONFIG..."
+  "$MISE_BIN" install --config "$MISE_CONFIG"
+  
+  # Now mise knows what Node is, so npm will work
   echo "📡 Installing Gemini CLI (@nightly)..."
-  "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
+  "$MISE_BIN" exec --config "$MISE_CONFIG" -- npm install -g @google/gemini-cli@nightly
+else
+  echo "⚠️ Mise not found at $MISE_BIN"
+fi
 
   # --- GCloud Component Management ---
   # FIX 3: Check gcloud status via mise exec
