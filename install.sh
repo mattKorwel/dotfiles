@@ -78,19 +78,22 @@ ensure_zsh
 
 echo "🔗 Setting up symlinks from: $DOTFILES_DIR"
 
-# Shell Configs
-for f in .zshrc .bashrc .bash_profile .tmux.conf; do
+# Shell Profiles
+for f in .zshrc .bashrc .bash_profile; do
   if [[ -f "$HOME/$f" && ! -L "$HOME/$f" ]]; then
     mv "$HOME/$f" "$HOME/$f.bak.$(date +%F_%T)"
   fi
-  ln -sf "$DOTFILES_DIR/$f" "$HOME/$f"
+  ln -sf "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
 done
 
-# App Configs
-mkdir -p ~/.config/mise ~/.config/komorebi
+# Config Directory
+mkdir -p ~/.config/mise ~/.config/komorebi ~/.config/tmux ~/.config/aerospace
+
+# Core Configs
 ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
-ln -sf "$DOTFILES_DIR/starship.toml" ~/.config/starship.toml
-ln -sf "$DOTFILES_DIR/.aerospace.toml" ~/.aerospace.toml
+ln -sf "$DOTFILES_DIR/.config/starship.toml" ~/.config/starship.toml
+ln -sf "$DOTFILES_DIR/.config/tmux/tmux.conf" ~/.tmux.conf
+ln -sf "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
 
 # Gemini Config
 mkdir -p ~/.gemini

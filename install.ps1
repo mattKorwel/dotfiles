@@ -84,23 +84,26 @@ Write-Host "--- Linking Dotfiles & Configuring Git/GPG ---" -ForegroundColor Yel
 function New-SafeLink($LinkPath, $TargetPath) {
     if (Test-Path $LinkPath) {
         $item = Get-Item $LinkPath
-        if ($item.LinkType -eq "SymbolicLink") { return } 
+        if ($item.LinkType -eq "SymbolicLink") { 
+            if ($item.Target -eq $TargetPath) { return }
+        } 
         Move-Item $LinkPath "$LinkPath.bak_$(Get-Date -f yyyyMMdd)" -Force -ErrorAction SilentlyContinue
     }
     # Ensure parent directory exists (critical for fresh installs)
     $parent = Split-Path $LinkPath
-    if (!(Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+    if ($parent -and !(Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
     New-Item -ItemType SymbolicLink -Path $LinkPath -Target $TargetPath -Force | Out-Null
 }
 
 # Profile & Terminal Links
 $TermSettings = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
 New-SafeLink $TermSettings "$DOTFILES_DIR\terminal-settings.json"
-New-SafeLink "$HOME\.config\starship.toml" "$DOTFILES_DIR\starship.toml"
-New-SafeLink $PROFILE "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
+New-SafeLink "$HOME\.config\starship.toml" "$DOTFILES_DIR\.config\starship.toml"
+New-SafeLink $PROFILE "$DOTFILES_DIR\profiles\Microsoft.PowerShell_profile.ps1"
 $PS7_DIR = "$HOME\Documents\PowerShell"; if (!(Test-Path $PS7_DIR)) { mkdir $PS7_DIR | Out-Null }
-New-SafeLink "$PS7_DIR\Microsoft.PowerShell_profile.ps1" "$DOTFILES_DIR\Microsoft.PowerShell_profile.ps1"
-# Mise Global Config (Maps your dotfiles version to the Windows AppData path)
+New-SafeLink "$PS7_DIR\Microsoft.PowerShell_profile.ps1" "$DOTFILES_DIR\profiles\Microsoft.PowerShell_profile.ps1"
+
+# Mise Global Config
 $MiseConfigPath = Join-Path $env:APPDATA "mise\config.toml"
 New-SafeLink $MiseConfigPath "$DOTFILES_DIR\.config\mise\config.toml"
 
