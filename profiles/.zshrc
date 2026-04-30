@@ -24,6 +24,37 @@ elif command -v mise &> /dev/null; then
   eval "$(mise activate zsh)"
 fi
 
+_dotfiles_export_starship_hostname() {
+  local hostname pattern
+  hostname="$(hostname -f 2>/dev/null || hostname 2>/dev/null || printf '%s' "${HOSTNAME:-}")"
+  unset STARSHIP_HOSTNAME_LOCAL STARSHIP_HOSTNAME_WORK STARSHIP_HOSTNAME_REMOTE STARSHIP_HOSTNAME_ROAM
+
+  for pattern in "${DOTFILES_HOSTNAME_REMOTE_PATTERNS[@]}"; do
+    if [[ "$hostname" == $pattern ]]; then
+      export STARSHIP_HOSTNAME_REMOTE="$hostname"
+      return
+    fi
+  done
+
+  for pattern in "${DOTFILES_HOSTNAME_WORK_PATTERNS[@]}"; do
+    if [[ "$hostname" == $pattern ]]; then
+      export STARSHIP_HOSTNAME_WORK="$hostname"
+      return
+    fi
+  done
+
+  for pattern in "${DOTFILES_HOSTNAME_ROAM_PATTERNS[@]}"; do
+    if [[ "$hostname" == $pattern ]]; then
+      export STARSHIP_HOSTNAME_ROAM="$hostname"
+      return
+    fi
+  done
+
+  export STARSHIP_HOSTNAME_LOCAL="$hostname"
+}
+_dotfiles_export_starship_hostname
+unfunction _dotfiles_export_starship_hostname
+
 # Starship Prompt
 if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"
