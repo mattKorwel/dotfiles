@@ -17,12 +17,13 @@ default-root-container-orientation = 'auto'
 
 # Persistent Workspaces
 # Ensures named workspaces exist even when empty
-persistent-workspaces = ['Dev', 'Communications', 'Personal']
+persistent-workspaces = ['Dev', 'Google', 'Communications', 'Personal']
 
 # Monitor Assignment
 # All workspaces consolidated to the primary monitor
 [workspace-to-monitor-force-assignment]
 Dev = 'BenQ RD320U'
+Google = 'BenQ RD320U'
 Communications = 'BenQ RD320U'
 Personal = 'BenQ RD320U'
 
@@ -81,7 +82,7 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-4 = 'workspace 4'
     alt-5 = 'workspace 5'
     alt-6 = 'workspace Dev'
-    # alt-7 is reserved for private extensions
+    alt-7 = 'workspace Google'
     alt-8 = 'workspace Communications'
     alt-9 = 'workspace Personal'
 
@@ -94,7 +95,7 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-shift-4 = 'move-node-to-workspace 4'
     alt-shift-5 = 'move-node-to-workspace 5'
     alt-shift-6 = 'move-node-to-workspace Dev'
-    # alt-shift-7 is reserved for private extensions
+    alt-shift-7 = 'move-node-to-workspace Google'
     alt-shift-8 = 'move-node-to-workspace Communications'
     alt-shift-9 = 'move-node-to-workspace Personal'
 
