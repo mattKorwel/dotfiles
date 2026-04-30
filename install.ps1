@@ -97,7 +97,7 @@ function New-SafeLink($LinkPath, $TargetPath) {
 
 # Profile & Terminal Links
 $TermSettings = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-New-SafeLink $TermSettings "$DOTFILES_DIR\terminal-settings.json"
+New-SafeLink $TermSettings "$DOTFILES_DIR\.config\windows-terminal\settings.json"
 New-SafeLink "$HOME\.config\starship.toml" "$DOTFILES_DIR\.config\starship.toml"
 New-SafeLink $PROFILE "$DOTFILES_DIR\profiles\Microsoft.PowerShell_profile.ps1"
 $PS7_DIR = "$HOME\Documents\PowerShell"; if (!(Test-Path $PS7_DIR)) { mkdir $PS7_DIR | Out-Null }
@@ -120,7 +120,7 @@ if (Get-Command gpg -ErrorAction SilentlyContinue) {
     
     git config --global user.name "Matt Korwel"
     git config --global user.email "matt.korwel@gmail.com"
-    git config --global include.path "C:/dev/dotfiles/.gitconfig.shared"
+    git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
     git config --global core.symlinks true
 
     if (!(gpg --list-secret-keys 2>$null)) {

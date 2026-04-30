@@ -95,6 +95,15 @@ ln -sf "$DOTFILES_DIR/.config/starship.toml" ~/.config/starship.toml
 ln -sf "$DOTFILES_DIR/.config/tmux/tmux.conf" ~/.tmux.conf
 ln -sf "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
 
+# Git Configuration
+if [[ ! -f ~/.gitconfig ]]; then
+  touch ~/.gitconfig
+fi
+if ! grep -q "gitconfig.shared" ~/.gitconfig; then
+  echo "📝 Including shared git config in ~/.gitconfig..."
+  git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
+fi
+
 # Gemini Config
 mkdir -p ~/.gemini
 if [[ -f ~/.gemini/settings.json && ! -L ~/.gemini/settings.json ]]; then
