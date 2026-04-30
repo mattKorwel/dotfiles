@@ -15,12 +15,14 @@
 ## 🔗 Symlink Map (Managed via `install.ps1` / `install.sh`)
 | Source (in `~/dotfiles`) | Destination |
 | :--- | :--- |
-| `Microsoft.PowerShell_profile.ps1` | `$PROFILE` |
-| `terminal-settings.json` | `$env:LOCALAPPDATA\...\settings.json` |
+| `profiles/Microsoft.PowerShell_profile.ps1` | `$PROFILE` |
+| `.config/windows-terminal/settings.json` | `$env:LOCALAPPDATA\...\settings.json` |
 | `.config/mise/config.toml` | `~/.config/mise/config.toml` |
-| `.gemini/settings.json` | `~/.gemini/settings.json` |
-| `.config/komorebi/` | `~/.config/komorebi` |
-| `.aerospace.toml` | `~/.aerospace.toml` |
+| `.config/starship.toml` | `~/.config/starship.toml` |
+| `.config/git/gitconfig.shared` | (Included via `git config`) |
+| `.config/aerospace/aerospace.toml` | `~/.aerospace.toml` |
+| `profiles/.zshrc` | `~/.zshrc` |
+| `profiles/.bashrc` | `~/.bashrc` |
 
 ## 🪟 Window Management Logic (Komorebi + AHK / AeroSpace)
 

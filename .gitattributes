@@ -1,10 +1,14 @@
 # Force LF (Unix) line endings for all shell scripts and dotfiles
 # to prevent Zsh parse errors on Windows/WSL.
 *.sh text eol=lf
-.zshrc text eol=lf
-.bashrc text eol=lf
-.bash_profile text eol=lf
-.gitconfig.shared text eol=lf
-starship.toml text eol=lf
-config.toml text eol=lf
+profiles/.zshrc text eol=lf
+profiles/.bashrc text eol=lf
+profiles/.bash_profile text eol=lf
+.config/git/gitconfig.shared text eol=lf
+.config/starship.toml text eol=lf
+.config/mise/config.toml text eol=lf
+.config/tmux/tmux.conf text eol=lf
+.config/aerospace/aerospace.toml text eol=lf
+
+# PowerShell files should use CRLF
 *.ps1 text eol=crlf
