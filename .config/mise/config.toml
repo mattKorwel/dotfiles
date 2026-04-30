@@ -6,7 +6,6 @@ zoxide = "latest"
 fzf = "latest"
 gh = "latest"
 "npm:@google/gemini-cli" = "nightly"
-gcloud = "system"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
