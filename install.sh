@@ -4,7 +4,7 @@ set -e
 
 # --- Configuration ---
 REPO_URL="https://github.com/mattkorwel/dotfiles.git"
-TARGET_DIR="$HOME/dev/dotfiles"
+DOTFILES_DIR="$HOME/dev/dotfiles"
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
 
@@ -37,8 +37,8 @@ ensure_zsh() {
 
 # --- 1. Bootstrap: Clone Repo if needed ---
 
-if [ ! -d "$TARGET_DIR/.git" ]; then
-  echo "📡 Bootstrapping: Cloning public dotfiles to $TARGET_DIR..."
+if [ ! -d "$DOTFILES_DIR/.git" ]; then
+  echo "📡 Bootstrapping: Cloning public dotfiles to $DOTFILES_DIR..."
   
   # Ensure git is installed first
   if ! command -v git &> /dev/null; then
@@ -51,13 +51,25 @@ if [ ! -d "$TARGET_DIR/.git" ]; then
     fi
   fi
 
-  mkdir -p "$(dirname "$TARGET_DIR")"
-  git clone "$REPO_URL" "$TARGET_DIR"
+  mkdir -p "$(dirname "$DOTFILES_DIR")"
+  git clone "$REPO_URL" "$DOTFILES_DIR"
 fi
 
-# Ensure we are working with the correct directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)"
-DOTFILES_DIR="${SCRIPT_DIR:-$TARGET_DIR}"
+# --- 4. Symlinks & Configuration ---
+
+# Force the correct path to your repo
+REAL_DOTFILES="$HOME/dev/dotfiles"
+
+echo "🔗 Setting up symlinks from: $REAL_DOTFILES"
+
+# Shell Profiles
+for f in .zshrc .bashrc .bash_profile; do
+  if [[ -f "$HOME/$f" && ! -L "$HOME/$f" ]]; then
+    mv "$HOME/$f" "$HOME/$f.bak.$(date +%F_%T)"
+  fi
+  # This links ~/dev/dotfiles/profiles/.zshrc to ~/.zshrc
+  ln -sf "$REAL_DOTFILES/profiles/$f" "$HOME/$f"
+done
 
 # --- 2. Core Tooling Installation ---
 
@@ -90,27 +102,68 @@ if [[ ! -f "$HOME/.local/bin/mise" ]]; then
   curl https://mise.jdx.dev/install.sh | sh > /dev/null
 fi
 
-# --- 3. Runtime & Tool Installation (Mise) ---
+# --- Ensure we use the absolute path for links ---
+# Since curl runs don't have a file source, we force the known target path
+DOTFILES_DIR="$HOME/dev/dotfiles"
+
+# --- 3. Symlinks & Configuration (MOVED UP) ---
+# We do this BEFORE Mise so that ~/.config/mise/config.toml exists
+echo "🔗 Setting up symlinks from: $DOTFILES_DIR"
+
+# Shell Profiles
+for f in .zshrc .bashrc .bash_profile; do
+  # Link from the profiles subfolder in your repo to your home root
+  ln -sf "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
+done
+
+# Mise Config - CRITICAL to do this before 'mise install'
+mkdir -p ~/.config/mise
+ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
+
+# Other core configs
+mkdir -p ~/.config/tmux ~/.config/aerospace ~/.config/git
+ln -sf "$DOTFILES_DIR/.config/starship.toml" ~/.config/starship.toml
+ln -sf "$DOTFILES_DIR/.config/tmux/tmux.conf" ~/.tmux.conf
+ln -sf "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
+
+# Git Configuration
+if [[ ! -f ~/.gitconfig ]]; then
+  touch ~/.gitconfig
+fi
+if ! grep -q "gitconfig.shared" ~/.gitconfig; then
+  echo "📝 Including shared git config in ~/.gitconfig..."
+  git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
+fi
+
+# Gemini Config
+mkdir -p ~/.ge
+ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
+
+# Gemini Scripts
+mkdir -p ~/.gemini-scripts
+ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gemini-functions.sh
+
+# --- 4. Runtime & Tool Installation (Mise) ---
 echo "📡 Configuring Mise (Runtimes & GCloud)..."
 MISE_BIN="$HOME/.local/bin/mise"
-# Find your config file (adjust name if it's .mise.toml)
-MISE_CONFIG="$DOTFILES_DIR/.config/mise/config.toml"
 
 if [[ -f "$MISE_BIN" ]]; then
   export MISE_YES=1
+  # This ensures the script can 'see' the node/npm mise is about to install
   export PATH="$HOME/.local/bin:$PATH"
+  eval "$($MISE_BIN activate bash)"
+
+  # Now that symlinks are set, mise will automatically find ~/.config/mise/config.toml
+  "$MISE_BIN" trust "$DOTFILES_DIR"
   
-  # Tell mise to trust and use the specific config in your repo
-  "$MISE_BIN" trust "$MISE_CONFIG"
+  echo "📦 Running mise install..."
+  "$MISE_BIN" install
   
-  echo "📦 Installing runtimes from $MISE_CONFIG..."
-  "$MISE_BIN" install --config "$MISE_CONFIG"
-  
-  # Now mise knows what Node is, so npm will work
   echo "📡 Installing Gemini CLI (@nightly)..."
-  "$MISE_BIN" exec --config "$MISE_CONFIG" -- npm install -g @google/gemini-cli@nightly
+  # Using exec ensures we use the npm mise just downloaded
+  "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
 else
-  echo "⚠️ Mise not found at $MISE_BIN"
+  echo "⚠️ Mise not found. Runtimes skipped."
 fi
 
   # --- GCloud Component Management ---
@@ -138,49 +191,6 @@ else
 fi
 
 ensure_zsh
-
-# --- 4. Symlinks & Configuration ---
-
-echo "🔗 Setting up symlinks from: $DOTFILES_DIR"
-
-# Shell Profiles
-for f in .zshrc .bashrc .bash_profile; do
-  if [[ -f "$HOME/$f" && ! -L "$HOME/$f" ]]; then
-    mv "$HOME/$f" "$HOME/$f.bak.$(date +%F_%T)"
-  fi
-  ln -sf "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
-done
-
-# Config Directory
-mkdir -p ~/.config/mise ~/.config/komorebi ~/.config/tmux ~/.config/aerospace ~/.config/windows-terminal ~/.config/git
-
-# Core Configs
-ln -sf "$DOTFILES_DIR/.config/mise/config.toml" ~/.config/mise/config.toml
-ln -sf "$DOTFILES_DIR/.config/starship.toml" ~/.config/starship.toml
-ln -sf "$DOTFILES_DIR/.config/tmux/tmux.conf" ~/.tmux.conf
-ln -sf "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
-ln -sf "$DOTFILES_DIR/.config/windows-terminal/settings.json" ~/.config/windows-terminal/settings.json
-ln -sf "$DOTFILES_DIR/.config/git/gitconfig.shared" ~/.config/git/gitconfig.shared
-
-# Git Configuration
-if [[ ! -f ~/.gitconfig ]]; then
-  touch ~/.gitconfig
-fi
-if ! grep -q "gitconfig.shared" ~/.gitconfig; then
-  echo "📝 Including shared git config in ~/.gitconfig..."
-  git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
-fi
-
-# Gemini Config
-mkdir -p ~/.gemini
-if [[ -f ~/.gemini/settings.json && ! -L ~/.gemini/settings.json ]]; then
-  mv ~/.gemini/settings.json ~/.gemini/settings.json.bak.$(date +%F_%T)
-fi
-ln -sf "$DOTFILES_DIR/.gemini/settings.json" ~/.gemini/settings.json
-
-# Gemini Scripts
-mkdir -p ~/.gemini-scripts
-ln -sf "$DOTFILES_DIR/.gemini-scripts/gemini-functions.sh" ~/.gemini-scripts/gemini-functions.sh
 
 # --- 5. GitHub & Private Extensions ---
 
