@@ -30,6 +30,25 @@ if command -v zoxide &> /dev/null; then
 fi
 
 # --- 3. Shell Options & Completion ---
+# Load Zsh completions
+ZSH_PLUGIN_DIR="$HOME/.local/share/zsh-plugins"
+ZSH_COMP_DIR="$HOME/.local/share/zsh-completions"
+
+# Add custom completions and plugin completions to fpath
+fpath=("$ZSH_COMP_DIR" $fpath)
+if [[ -d "$ZSH_PLUGIN_DIR/zsh-completions/src" ]]; then
+  fpath=("$ZSH_PLUGIN_DIR/zsh-completions/src" $fpath)
+fi
+
+# Initialize completion system
+autoload -Uz compinit
+compinit
+
+# Source any extra completion scripts (non-fpath)
+for script in "$ZSH_COMP_DIR"/*.zsh(N); do
+  source "$script"
+done
+
 setopt histignorealldups sharehistory appendhistory
 zstyle ':completion:*' menu yes select
 
@@ -47,18 +66,9 @@ HISTSIZE=10000
 SAVEHIST=$HISTSIZE
 
 # --- 4. Plugins & Enhancements ---
-# Try common paths for syntax highlighting and autosuggestions
-PLUGIN_PATHS=(
-  "/opt/homebrew/share"
-  "/usr/share"
-  "/usr/local/share"
-  "$HOME/.local/share"
-)
-
-for p in "${PLUGIN_PATHS[@]}"; do
-  [[ -f "$p/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$p/zsh-autosuggestions/zsh-autosuggestions.zsh"
-  [[ -f "$p/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$p/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-done
+# Source plugins from local directory
+[[ -f "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+[[ -f "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # FZF (Fuzzy Search & Tab-completion)
 if command -v fzf &> /dev/null; then
@@ -94,25 +104,6 @@ export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
 
 export PATH="$HOME/dev/bin:$PATH"
 
-# Gemini Orbit Shell Integration
-alias orbit='node "/Users/mattkorwel/.gemini/extensions/orbit/bundle/orbit-cli.js"'
-_orbit() {
-  local -a commands
-  commands=(
-    'ci:Monitor CI status for a branch with noise filtering.'
-    'install-shell:Install Orbit shell aliases and tab-completion.'
-    'jettison:Decommission a specific mission and its worktree.'
-    'liftoff:Build or wake infrastructure (use --with-new-station).'
-    'mission:Start, resume, or perform maneuvers on a PR mission.'
-    'pulse:Check station health and active mission status.'
-    'schematic:Manage infrastructure blueprints: <list|create|edit|import>'
-    'splashdown:Emergency shutdown of all active remote capsules.'
-    'station:Hardware control: <activate|list|liftoff|delete>'
-    'uplink:Inspect local or remote mission telemetry.'
-  )
-  _describe 'orbit' commands
-}
-compdef _orbit orbit
 # --- 8. Private Extensions Hook ---
 # Load private/corporate configurations if they exist
 PRIVATE_BOOTSTRAP="$HOME/dev/dotfiles-private/bootstrap.sh"

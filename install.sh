@@ -91,7 +91,64 @@ if ! grep -q "gitconfig.shared" "$HOME/.gitconfig"; then
   git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
 fi
 
-# --- 3. Tools: Mise & Runtimes ---
+# --- 3. Shell Plugins (Manual) ---
+
+echo "🔌 Setting up Zsh plugins..."
+ZSH_PLUGIN_DIR="$HOME/.local/share/zsh-plugins"
+mkdir -p "$ZSH_PLUGIN_DIR"
+
+PLUGINS=(
+  "zsh-users/zsh-autosuggestions"
+  "zsh-users/zsh-syntax-highlighting"
+  "zsh-users/zsh-completions"
+)
+
+for plugin in "${PLUGINS[@]}"; do
+  name=$(basename "$plugin")
+  if [ ! -d "$ZSH_PLUGIN_DIR/$name" ]; then
+    echo "📥 Cloning $name..."
+    git clone "https://github.com/$plugin.git" "$ZSH_PLUGIN_DIR/$name"
+  else
+    echo "upgrading $name..."
+    git -C "$ZSH_PLUGIN_DIR/$name" pull --quiet
+  fi
+done
+
+# --- 4. Tool Completions (Automated) ---
+
+echo "⚙️ Generating shell completions..."
+ZSH_COMP_DIR="$HOME/.local/share/zsh-completions"
+mkdir -p "$ZSH_COMP_DIR"
+
+# Mise
+if command -v mise &>/dev/null; then
+  mise completion zsh > "$ZSH_COMP_DIR/_mise"
+fi
+
+# GitHub CLI
+if command -v gh &>/dev/null; then
+  gh completion -s zsh > "$ZSH_COMP_DIR/_gh"
+fi
+
+# NPM
+if command -v npm &>/dev/null; then
+  npm completion > "$ZSH_COMP_DIR/npm.zsh"
+fi
+
+# GCloud
+# Note: GCloud completions are usually sourced from the SDK path.
+# We will create a pointer script.
+if command -v gcloud &>/dev/null; then
+  GCLOUD_SDK_ROOT=$(gcloud info --format="value(basic.sdk_root)")
+elif command -v mise &>/dev/null; then
+  GCLOUD_SDK_ROOT=$(mise where gcloud 2>/dev/null)
+fi
+
+if [[ -d "$GCLOUD_SDK_ROOT" ]]; then
+  echo "source '$GCLOUD_SDK_ROOT/completion.zsh.inc'" > "$ZSH_COMP_DIR/gcloud.zsh"
+fi
+
+# --- 5. Tools: Mise & Runtimes ---
 
 # Mise (Quiet install) - STANDALONE VERSION
 if [[ ! -f "$HOME/.local/bin/mise" ]]; then
@@ -111,14 +168,23 @@ if [[ -f "$MISE_BIN" ]]; then
   "$MISE_BIN" install
 fi
 
-# --- 4. GitHub & Private Extensions ---
+# --- 6. GitHub & Private Extensions ---
 
-if [[ -f "$MISE_BIN" ]] && "$MISE_BIN" exec -- gh auth status &>/dev/null; then
-  if [ ! -d "$PRIVATE_DIR" ]; then
-    read -p "❓ Clone private dotfiles? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      "$MISE_BIN" exec -- gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR"
+if [ ! -d "$PRIVATE_DIR" ]; then
+  read -p "❓ Clone private dotfiles? (y/n) " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if ! "$MISE_BIN" exec -- gh auth status &>/dev/null; then
+      echo "🔐 GitHub authentication required..."
+      "$MISE_BIN" exec -- gh auth login
+    fi
+    echo "📡 Cloning private dotfiles..."
+    "$MISE_BIN" exec -- gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR"
+    
+    # Run private install script if it exists
+    if [[ -f "$PRIVATE_DIR/install.sh" ]]; then
+      echo "🛠️ Running private installation script..."
+      bash "$PRIVATE_DIR/install.sh"
     fi
   fi
 fi
