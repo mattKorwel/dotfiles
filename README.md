@@ -14,7 +14,7 @@ Portable, robust, and modular dotfiles for Windows (PowerShell/Komorebi), macOS 
 If you don't even have `git` yet, you can bootstrap everything with this one-liner. It will install `git`, clone the repo, and run the installer:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mattkorwel/dotfiles/main/install.sh)"
+/bin/bash -c "$(curl -fsSL -H 'Cache-Control: no-cache' https://github.com/mattkorwel/dotfiles/raw/main/install.sh)"
 ```
 
 ### Standard Setup
