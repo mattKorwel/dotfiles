@@ -5,6 +5,7 @@ starship = "latest"
 zoxide = "latest"
 fzf = "latest"
 gh = "latest"
+gcloud = "latest"
 "npm:@google/gemini-cli" = "nightly"
 
 [settings]
