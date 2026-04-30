@@ -122,6 +122,12 @@ if command -v "$MISE_BIN" &> /dev/null; then
   # Install Gemini CLI globally
   echo "📡 Installing Gemini CLI (@nightly)..."
   "$MISE_BIN" exec -- npm install -g @google/gemini-cli@nightly --registry=https://registry.npmjs.org/
+
+  # Install all GCloud components
+  if "$MISE_BIN" which gcloud &> /dev/null; then
+    echo "📡 Installing all Google Cloud components (this may take a while)..."
+    "$MISE_BIN" exec -- bash -c 'gcloud components list --filter="state.name=Not Installed" --format="value(id)" | xargs -r gcloud components install --quiet'
+  fi
 else
   echo "⚠️ Mise not found. Runtimes and GCloud install skipped."
 fi
