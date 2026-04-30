@@ -1,15 +1,42 @@
-### GitHub dev server dotfiles
+# Matt Korwel's Dotfiles 🚀
 
-```shell
-cd ~
-git clone git@github.com:mattkorwel/dotfiles .dotfiles
-.dotfiles/install.sh
+Portable, robust, and modular dotfiles for Windows (PowerShell/Komorebi), macOS (AeroSpace/Zsh), and Linux/WSL.
+
+## 🛠 Features
+- **Cross-Platform**: Consistent experience across Windows, macOS, and Linux.
+- **Modern Tooling**: Managed via `mise` (node, python, go, etc.), `starship` prompt, and `zoxide`.
+- **Window Management**: Configs for `komorebi` (Win) and `AeroSpace` (Mac).
+- **Fast Installation**: One-liner bootstrap for new machines.
+
+## 🚀 Installation
+
+### Zero-Start (No Git?)
+If you don't even have `git` yet, you can bootstrap everything with this one-liner. It will install `git`, clone the repo, and run the installer:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mattkorwel/dotfiles/main/install.sh)"
 ```
 
-```pwsh
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/mkorwel/dotfiles/main/setup.ps1'))
+### Standard Setup
+If you already have `git`, clone and run the installer:
+
+```bash
+git clone https://github.com/mattkorwel/dotfiles.git ~/dev/dotfiles
+cd ~/dev/dotfiles
+./install.sh
 ```
 
-```pwsh
- Set-ExecutionPolicy Bypass -Scope Process -Force; .\install.ps1
+### Authentication & Extensions
+During installation, you will be prompted to log in to the GitHub CLI. Once authenticated, the script will offer to clone your private extensions repository (`dotfiles-private`) if it exists. This allows you to securely manage corporate or sensitive configurations without exposing them in this public repository.
+
+## 🪟 Windows Setup
+For Windows machines, use the PowerShell installer:
+
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+./install.ps1
 ```
+
+## 🎯 Architecture
+- **Public Repo**: Core configuration, generic tools, and cross-platform logic.
+- **Private Extensions**: Machine-specific overrides and sensitive scripts (handled via a modular hook system in `.zshrc`/`.bashrc`/`profile.ps1`).

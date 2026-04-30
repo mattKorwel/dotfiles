@@ -79,7 +79,7 @@ ensure_zsh
 echo "🔗 Setting up symlinks from: $DOTFILES_DIR"
 
 # Shell Configs
-for f in .zshrc .bashrc .bash_profile .tmux.conf .p10k.zsh; do
+for f in .zshrc .bashrc .bash_profile .tmux.conf; do
   if [[ -f "$HOME/$f" && ! -L "$HOME/$f" ]]; then
     mv "$HOME/$f" "$HOME/$f.bak.$(date +%F_%T)"
   fi
