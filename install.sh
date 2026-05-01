@@ -191,14 +191,10 @@ AGENTS_URL="https://github.com/mattkorwel/.agents.git"
 AGENTS_DIR="$HOME/dev/.agents"
 
 if [ ! -d "$ORI_DIR" ]; then
-  read -p "❓ Clone 'ori' (Agent Context Store)? (y/n) " -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    ensure_gh_auth
-    echo "📡 Cloning ori..."
-    mkdir -p "$(dirname "$ORI_DIR")"
-    "$MISE_BIN" exec -- gh repo clone "$ORI_URL" "$ORI_DIR"
-  fi
+  ensure_gh_auth
+  echo "📡 Cloning ori..."
+  mkdir -p "$(dirname "$ORI_DIR")"
+  "$MISE_BIN" exec -- gh repo clone "$ORI_URL" "$ORI_DIR"
 else
   echo "📡 Updating ori..."
   git -C "$ORI_DIR" pull --ff-only
