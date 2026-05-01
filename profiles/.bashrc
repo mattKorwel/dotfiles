@@ -73,3 +73,5 @@ export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
 
 # Load Gemini CLI Shortcuts & Functions
 [[ -f ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh ]] && . ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh
+
+export PATH="$HOME/dev/bin:$PATH"
