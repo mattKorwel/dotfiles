@@ -176,14 +176,54 @@ fi
 
 # --- 6. GitHub & Private Extensions ---
 
+# Private repos (dotfiles-private and ori) require authentication
+ensure_gh_auth() {
+  if ! "$MISE_BIN" exec -- gh auth status &>/dev/null; then
+    echo "🔐 GitHub authentication required for private repositories..."
+    "$MISE_BIN" exec -- gh auth login
+  fi
+}
+
+# 6a. Ori (Agentic Context)
+ORI_URL="https://github.com/mattkorwel/ori.git"
+ORI_DIR="$HOME/dev/ori"
+AGENTS_URL="https://github.com/mattkorwel/.agents.git"
+AGENTS_DIR="$HOME/dev/.agents"
+
+if [ ! -d "$ORI_DIR" ]; then
+  read -p "❓ Clone 'ori' (Agent Context Store)? (y/n) " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    ensure_gh_auth
+    echo "📡 Cloning ori..."
+    mkdir -p "$(dirname "$ORI_DIR")"
+    "$MISE_BIN" exec -- gh repo clone "$ORI_URL" "$ORI_DIR"
+  fi
+else
+  echo "📡 Updating ori..."
+  git -C "$ORI_DIR" pull --ff-only
+fi
+
+if [ ! -d "$AGENTS_DIR" ]; then
+  read -p "❓ Clone '.agents' (Private Context Vault)? (y/n) " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    ensure_gh_auth
+    echo "📡 Cloning .agents vault..."
+    mkdir -p "$(dirname "$AGENTS_DIR")"
+    "$MISE_BIN" exec -- gh repo clone "$AGENTS_URL" "$AGENTS_DIR"
+  fi
+else
+  echo "📡 Updating .agents vault..."
+  git -C "$AGENTS_DIR" pull --ff-only
+fi
+
+# 6b. Private Dotfiles
 if [ ! -d "$PRIVATE_DIR" ]; then
   read -p "❓ Clone private dotfiles? (y/n) " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    if ! "$MISE_BIN" exec -- gh auth status &>/dev/null; then
-      echo "🔐 GitHub authentication required..."
-      "$MISE_BIN" exec -- gh auth login
-    fi
+    ensure_gh_auth
     echo "📡 Cloning private dotfiles..."
     "$MISE_BIN" exec -- gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR"
   fi
