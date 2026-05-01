@@ -184,37 +184,7 @@ ensure_gh_auth() {
   fi
 }
 
-# 6a. Ori (Agentic Context)
-ORI_URL="https://github.com/mattkorwel/ori.git"
-ORI_DIR="$HOME/dev/ori"
-AGENTS_URL="https://github.com/mattkorwel/.agents.git"
-AGENTS_DIR="$HOME/dev/.agents"
-
-if [ ! -d "$ORI_DIR" ]; then
-  ensure_gh_auth
-  echo "📡 Cloning ori..."
-  mkdir -p "$(dirname "$ORI_DIR")"
-  "$MISE_BIN" exec -- gh repo clone "$ORI_URL" "$ORI_DIR"
-else
-  echo "📡 Updating ori..."
-  git -C "$ORI_DIR" pull --ff-only
-fi
-
-if [ ! -d "$AGENTS_DIR" ]; then
-  read -p "❓ Clone '.agents' (Private Context Vault)? (y/n) " -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    ensure_gh_auth
-    echo "📡 Cloning .agents vault..."
-    mkdir -p "$(dirname "$AGENTS_DIR")"
-    "$MISE_BIN" exec -- gh repo clone "$AGENTS_URL" "$AGENTS_DIR"
-  fi
-else
-  echo "📡 Updating .agents vault..."
-  git -C "$AGENTS_DIR" pull --ff-only
-fi
-
-# 6b. Private Dotfiles
+# 6a. Private Dotfiles
 if [ ! -d "$PRIVATE_DIR" ]; then
   read -p "❓ Clone private dotfiles? (y/n) " -n 1 -r
   echo
