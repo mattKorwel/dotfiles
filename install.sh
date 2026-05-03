@@ -14,10 +14,10 @@
 #   2. Symlink shell + tool configs
 #   3. Zsh plugins + tool completions
 #   4. Mise + runtimes
-#   5. Private dotfiles (clone, link cloudcode + agent configs)
-#   6. Ori (clone, build)
-#   7. Vault (.agents) (clone, link AGENTS.md + skills into every harness)
-#   8. Ori post-install (mcp install + git pre-commit hook + audit)
+#   5. Private dotfiles (clone, link cloudcode + ori configs + ssh config)
+#   6. Ori binary (download from GitHub Releases) + `ori install`
+#      (`ori install` clones the vault, writes cloudcode.json, links
+#       AGENTS.md+skills into every harness, installs the git hook, audits)
 
 set -e
 
@@ -50,12 +50,12 @@ answer_yes() {
 REPO_URL="https://github.com/mattkorwel/dotfiles.git"
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
 
-VAULT_REPO_URL="https://github.com/mattkorwel/.agents.git"
-
 DOTFILES_DIR="$HOME/dev/dotfiles"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
 
-VAULT_DIR="$HOME/dev/.agents"
+# Vault location, clone URL, and clone logic all live in ori
+# (~/.ori/vaults.toml + `ori install`). This script no longer needs to
+# know about it.
 
 export DOTFILES_BACKUP_DIR="$DOTFILES_DIR/.backups"
 
@@ -174,8 +174,8 @@ fi
 if [[ -d "$PRIVATE_DIR" ]]; then
   echo
   echo "🔗 Linking cloudcode plugins + commands from $PRIVATE_DIR..."
-  echo "   (cloudcode.json itself is per-machine; section 8 below runs"
-  echo "    'ori mcp install' to generate it with this host's paths.)"
+  echo "   (cloudcode.json itself is per-machine; 'ori install' below"
+  echo "    generates it with this host's paths.)"
   CLOUDCODE_SRC="$PRIVATE_DIR/configs/cloudcode"
   CLOUDCODE_DST="$HOME/.config/cloudcode"
   mkdir -p "$CLOUDCODE_DST/plugins"
@@ -189,36 +189,30 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     backup_and_link "$CLOUDCODE_SRC/commands" "$CLOUDCODE_DST/commands"
   fi
 
-  # ~/.ori/{classes,bootstrap}.toml: per-user policy that travels with
-  # dotfiles. Sharable across machines (no host-specific paths in there).
+  # ~/.ori/{classes,bootstrap,vaults}.toml: per-user policy that travels
+  # with dotfiles. Sharable across machines (no host-specific paths).
   ORI_CFG_SRC="$PRIVATE_DIR/configs/ori"
   ORI_CFG_DST="$HOME/.ori"
   mkdir -p "$ORI_CFG_DST"
   for f in classes.toml bootstrap.toml vaults.toml; do
     [[ -f "$ORI_CFG_SRC/$f" ]] && backup_and_link "$ORI_CFG_SRC/$f" "$ORI_CFG_DST/$f"
   done
+
+  # ~/.ssh/config: my personal ssh config travels with private dotfiles
+  # so I don't lose it across machines. Mode 0644 is fine (no secrets).
+  if [[ -f "$PRIVATE_DIR/configs/ssh/config" ]]; then
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    backup_and_link "$PRIVATE_DIR/configs/ssh/config" "$HOME/.ssh/config"
+  fi
 fi
 
-# NOTE: ori binary install used to live here (clone + build). Removed
-# because `ori workshop bootstrap` already scp's a cross-built binary to
-# the remote BEFORE running this installer, so cloning + rebuilding is
-# wasteful. On your primary mac, install ori once via a one-time
-# `cd ~/dev/ori && ./build.sh` (or use `ori workshop bootstrap` from
-# another machine you already have ori on). The post-install section
-# below skips silently if ori isn't installed.
-
-# --- 7. Vault clone (.agents repo) ---
-echo
-ans=$(answer_yes "❓ Clone the .agents vault? (Y/n) ")
-if [[ ! "$ans" =~ ^[Nn]$ ]]; then
-  ensure_gh_auth
-  clone_or_pull "$VAULT_REPO_URL" "$VAULT_DIR" --gh
-fi
-
-# --- 8. ori binary (download from GitHub Releases) + ori install ---
+# --- 6. Ori binary + `ori install` ---
 # fetch_ori downloads the matching release binary into ~/.local/bin/ori.
-# Then `ori install` wires cloudcode.json + harness AGENTS.md/skills
-# symlinks + git hook + audit. Both idempotent.
+# `ori install` then clones the vault (per ~/.ori/vaults.toml), writes
+# cloudcode.json, links AGENTS.md+skills into every harness, installs
+# the git pre-commit hook, and runs the fortification audit. Both steps
+# are idempotent.
 echo
 # shellcheck disable=SC1091
 source "$DOTFILES_DIR/lib/ori-fetch.sh"
