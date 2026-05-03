@@ -184,22 +184,9 @@ else
 fi
 
 if [[ -d "$PRIVATE_DIR" ]]; then
-  echo
-  echo "🔗 Linking cloudcode plugins + commands from $PRIVATE_DIR..."
-  echo "   (cloudcode.json itself is per-machine; 'ori install' below"
-  echo "    generates it with this host's paths.)"
-  CLOUDCODE_SRC="$PRIVATE_DIR/configs/cloudcode"
-  CLOUDCODE_DST="$HOME/.config/cloudcode"
-  mkdir -p "$CLOUDCODE_DST/plugins"
-  if [[ -d "$CLOUDCODE_SRC/plugins" ]]; then
-    for f in "$CLOUDCODE_SRC/plugins/"*.js; do
-      [[ -f "$f" ]] || continue
-      backup_and_link "$f" "$CLOUDCODE_DST/plugins/$(basename "$f")"
-    done
-  fi
-  if [[ -d "$CLOUDCODE_SRC/commands" ]]; then
-    backup_and_link "$CLOUDCODE_SRC/commands" "$CLOUDCODE_DST/commands"
-  fi
+  # cloudcode plugins + commands are now bundled in the ori binary;
+  # 'ori install' (section 6 below) writes them to ~/.local/share/ori/
+  # and symlinks them into ~/.config/cloudcode/. Nothing to do here.
 
   # ~/.ori/{classes,bootstrap,vaults}.toml: per-user policy that travels
   # with dotfiles. Sharable across machines (no host-specific paths).
