@@ -2,8 +2,15 @@
 #
 # dotfiles installer — single entry point for mac & linux setup.
 #
-# Run on a fresh machine:
-#   curl -fsSL https://raw.githubusercontent.com/mattkorwel/dotfiles/main/install.sh | bash
+# Run on a fresh machine (one-liner — pipe a PAT in so private repos
+# and the private ori binary download all work without prompts):
+#
+#   GITHUB_PAT=ghp_xxx ORI_INSTALL_YES=1 \
+#     bash <(curl -fsSL https://raw.githubusercontent.com/mattkorwel/dotfiles/main/install.sh)
+#
+# After install, the PAT lives at ~/.ori/github-pat (mode 0600) so all
+# subsequent runs / `ori workshop bootstrap` invocations work env-free.
+#
 # Or after cloning:
 #   ~/dev/dotfiles/install.sh
 #
@@ -22,10 +29,9 @@
 set -e
 
 # --- Non-interactive mode ---
-# Set ORI_INSTALL_YES=1 (or pass --yes) to skip all prompts and default to YES
-# for: clone private dotfiles, clone & build ori, clone the .agents vault.
-# Combine with $GITHUB_PAT for fully unattended remote installs:
-#   GITHUB_PAT=ghp_xxx ORI_INSTALL_YES=1 bash <(curl -fsSL .../install.sh)
+# Set ORI_INSTALL_YES=1 (or pass --yes) to skip prompts and default YES
+# for: clone private dotfiles. Combine with $GITHUB_PAT for fully
+# unattended installs (see the one-liner at the top of this file).
 for arg in "$@"; do
   case "$arg" in
     --yes|-y) ORI_INSTALL_YES=1 ;;
