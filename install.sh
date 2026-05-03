@@ -65,8 +65,10 @@ if [[ ! -d "$DOTFILES_DIR/.git" ]]; then
   echo "📡 Cloning dotfiles to $DOTFILES_DIR..."
   command -v git >/dev/null 2>&1 || {
     if [[ "$OSTYPE" == "darwin"* ]]; then
-      command -v brew >/dev/null 2>&1 || { echo "Install Homebrew first." >&2; exit 1; }
-      brew install git
+      echo "❌ git not found. Install Apple's Command Line Tools first:" >&2
+      echo "     xcode-select --install" >&2
+      echo "   Then re-run this script." >&2
+      exit 1
     else
       sudo apt-get update && sudo apt-get install -y git
     fi
@@ -213,14 +215,17 @@ if [[ ! "$ans" =~ ^[Nn]$ ]]; then
   clone_or_pull "$VAULT_REPO_URL" "$VAULT_DIR" --gh
 fi
 
-# --- 8. ori install (cloudcode.json + harness symlinks + hook + audit) ---
-# One verb does the whole job. Skipped silently if ori isn't installed
-# yet (e.g. user is running the dotfiles installer before ever putting
-# ori on this host).
-ORI_BIN=$(command -v ori || echo "$HOME/.local/bin/ori")
-if [[ -x "$ORI_BIN" ]]; then
-  echo
-  "$ORI_BIN" install || echo "⚠️  ori install reported issues (continuing)"
+# --- 8. ori binary (download from GitHub Releases) + ori install ---
+# fetch_ori downloads the matching release binary into ~/.local/bin/ori.
+# Then `ori install` wires cloudcode.json + harness AGENTS.md/skills
+# symlinks + git hook + audit. Both idempotent.
+echo
+# shellcheck disable=SC1091
+source "$DOTFILES_DIR/lib/ori-fetch.sh"
+if fetch_ori --dest "$HOME/.local/bin/ori"; then
+  "$HOME/.local/bin/ori" install || echo "⚠️  ori install reported issues (continuing)"
+else
+  echo "⚠️  ori not installed; skipping 'ori install'. Re-run after fixing." >&2
 fi
 
 echo

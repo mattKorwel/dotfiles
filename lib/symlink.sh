@@ -8,24 +8,6 @@
 # Pretty timestamp for backup filenames (locale-independent, sortable).
 _dotfiles_ts() { date +%F_%H%M%S; }
 
-# pkg_install <name>
-#   Ensure a binary is on PATH; install via brew (mac) or apt (linux).
-pkg_install() {
-  local pkg=$1
-  command -v "$pkg" >/dev/null 2>&1 && return 0
-  echo "📦 $pkg not found. Installing..."
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    if command -v brew >/dev/null 2>&1; then
-      brew install "$pkg"
-    else
-      echo "⚠️  Homebrew missing. Install $pkg manually." >&2
-      return 1
-    fi
-  else
-    sudo apt-get update && sudo apt-get install -y "$pkg"
-  fi
-}
-
 # backup_and_link <src> <dst>
 #   Symlink src → dst. If dst already exists as a non-symlink file/dir,
 #   move it to $DOTFILES_BACKUP_DIR with a timestamp first. If dst is
