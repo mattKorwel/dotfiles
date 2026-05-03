@@ -26,7 +26,7 @@ fi
 # Starship hostname color: per-class drop-in in ~/.bashrc.d/ exports
 # STARSHIP_HOSTNAME_<CLASS>. Fallback to LOCAL if nothing claimed it.
 if [[ -z "${STARSHIP_HOSTNAME_WORK}${STARSHIP_HOSTNAME_REMOTE}${STARSHIP_HOSTNAME_CORP}" ]]; then
-  export STARSHIP_HOSTNAME_LOCAL="${HOSTNAME%%.*}"
+  export STARSHIP_HOSTNAME_LOCAL="$(hostname -s 2>/dev/null || hostname)"
 fi
 
 if command -v starship &> /dev/null; then

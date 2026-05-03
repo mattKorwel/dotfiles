@@ -31,7 +31,7 @@ fi
 # STARSHIP_HOSTNAME_<CLASS> for its own class. If nothing claimed the
 # host, treat it as local.
 if [[ -z "${STARSHIP_HOSTNAME_WORK}${STARSHIP_HOSTNAME_REMOTE}${STARSHIP_HOSTNAME_CORP}" ]]; then
-  export STARSHIP_HOSTNAME_LOCAL="${HOSTNAME%%.*}"
+  export STARSHIP_HOSTNAME_LOCAL="$(hostname -s 2>/dev/null || hostname)"
 fi
 
 # Starship Prompt
