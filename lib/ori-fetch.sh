@@ -40,11 +40,46 @@ fetch_ori() {
   fi
 
   mkdir -p "$(dirname "$dest")"
-  echo "📦 Fetching ori → $dest  (from $url)"
-  if ! curl -fsSL --retry 3 -o "${dest}.new" "$url"; then
-    echo "❌ release download failed. Check that a release exists at $url" >&2
-    rm -f "${dest}.new"
-    return 1
+
+  # If the repo is private (which is the default for ori), the public
+  # /releases/<...>/download/<asset> URL 404s. Resolve via the API
+  # using $GITHUB_PAT (or ~/.ori/github-pat as a fallback).
+  local pat="${GITHUB_PAT:-}"
+  if [[ -z "$pat" ]] && [[ -r "$HOME/.ori/github-pat" ]]; then
+    pat=$(< "$HOME/.ori/github-pat")
+  fi
+
+  echo "📦 Fetching ori → $dest"
+  if [[ -n "$pat" ]]; then
+    # API path: list assets for the release, find the one matching $asset,
+    # then download via /assets/<id> with Accept: octet-stream.
+    local asset_id
+    asset_id=$(curl -fsSL \
+        -H "Authorization: Bearer $pat" \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/repos/${ORI_RELEASE_REPO}/releases/${ref}" \
+      | python3 -c "import json,sys; d=json.load(sys.stdin); [print(a['id']) for a in d.get('assets',[]) if a['name']=='${asset}']" 2>/dev/null \
+      | head -1)
+    if [[ -z "$asset_id" ]]; then
+      echo "❌ no asset $asset in release $ref of $ORI_RELEASE_REPO" >&2
+      return 1
+    fi
+    if ! curl -fsSL --retry 3 \
+        -H "Authorization: Bearer $pat" \
+        -H "Accept: application/octet-stream" \
+        -o "${dest}.new" \
+        "https://api.github.com/repos/${ORI_RELEASE_REPO}/releases/assets/${asset_id}"; then
+      echo "❌ download via API failed" >&2
+      rm -f "${dest}.new"
+      return 1
+    fi
+  else
+    # Public-repo path: direct browser download URL.
+    if ! curl -fsSL --retry 3 -o "${dest}.new" "$url"; then
+      echo "❌ release download failed (and no \$GITHUB_PAT / ~/.ori/github-pat for private-repo fallback). URL: $url" >&2
+      rm -f "${dest}.new"
+      return 1
+    fi
   fi
   chmod +x "${dest}.new"
   mv "${dest}.new" "$dest"
