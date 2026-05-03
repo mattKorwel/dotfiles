@@ -32,9 +32,11 @@ set -e
 # Set ORI_INSTALL_YES=1 (or pass --yes) to skip prompts and default YES
 # for: clone private dotfiles. Combine with $GITHUB_PAT for fully
 # unattended installs (see the one-liner at the top of this file).
+SKIP_PRIVATE=0
 for arg in "$@"; do
   case "$arg" in
-    --yes|-y) ORI_INSTALL_YES=1 ;;
+    --yes|-y)      ORI_INSTALL_YES=1 ;;
+    --no-private)  SKIP_PRIVATE=1 ;;
   esac
 done
 
@@ -166,8 +168,12 @@ if [[ -f "$MISE_BIN" ]]; then
 fi
 
 # --- 5. Private dotfiles (cloudcode config + corp shell-init) ---
+# Skipped on remote workers (bootstrap passes --no-private). Operator
+# physical machines clone it for ssh aliases + ori configs + corp shell.
 echo
-if [[ ! -d "$PRIVATE_DIR" ]]; then
+if [[ "$SKIP_PRIVATE" == "1" ]]; then
+  echo "⏭️  Skipping private dotfiles (--no-private)"
+elif [[ ! -d "$PRIVATE_DIR" ]]; then
   ans=$(answer_yes "❓ Clone private dotfiles ($PRIVATE_REPO_URL)? (y/N) ")
   if [[ "$ans" =~ ^[Yy]$ ]]; then
     ensure_gh_auth
