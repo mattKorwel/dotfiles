@@ -1,7 +1,8 @@
-# --- 1. Private Extensions Hook (Load Environment Variables First) ---
-# Load private/corporate configurations if they exist
-PRIVATE_SHELL_INIT="$HOME/dev/dotfiles-private/configs/shell/init.sh"
-[[ -f "$PRIVATE_SHELL_INIT" ]] && . "$PRIVATE_SHELL_INIT"
+# --- 1. Per-host shell drop-ins ---
+# Each file in ~/.bashrc.d/ is sourced. ori bootstrap drops a per-class
+# file here (ori-class.sh); add your own freely.
+for _f in "$HOME"/.bashrc.d/*.sh; do [[ -r "$_f" ]] && . "$_f"; done
+unset _f
 
 # --- 2. Environment Detection ---
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -22,37 +23,11 @@ elif command -v mise &> /dev/null; then
   eval "$(mise activate bash)"
 fi
 
-# Starship Prompt (FIXED: Always use 'bash' init)
-_dotfiles_export_starship_hostname() {
-  local hostname pattern
-  hostname="$(hostname -f 2>/dev/null || hostname 2>/dev/null || printf '%s' "${HOSTNAME:-}")"
-  unset STARSHIP_HOSTNAME_LOCAL STARSHIP_HOSTNAME_WORK STARSHIP_HOSTNAME_REMOTE STARSHIP_HOSTNAME_ROAM
-
-  for pattern in "${DOTFILES_HOSTNAME_REMOTE_PATTERNS[@]}"; do
-    if [[ "$hostname" == $pattern ]]; then
-      export STARSHIP_HOSTNAME_REMOTE="$hostname"
-      return
-    fi
-  done
-
-  for pattern in "${DOTFILES_HOSTNAME_WORK_PATTERNS[@]}"; do
-    if [[ "$hostname" == $pattern ]]; then
-      export STARSHIP_HOSTNAME_WORK="$hostname"
-      return
-    fi
-  done
-
-  for pattern in "${DOTFILES_HOSTNAME_ROAM_PATTERNS[@]}"; do
-    if [[ "$hostname" == $pattern ]]; then
-      export STARSHIP_HOSTNAME_ROAM="$hostname"
-      return
-    fi
-  done
-
-  export STARSHIP_HOSTNAME_LOCAL="$hostname"
-}
-_dotfiles_export_starship_hostname
-unset -f _dotfiles_export_starship_hostname
+# Starship hostname color: per-class drop-in in ~/.bashrc.d/ exports
+# STARSHIP_HOSTNAME_<CLASS>. Fallback to LOCAL if nothing claimed it.
+if [[ -z "${STARSHIP_HOSTNAME_WORK}${STARSHIP_HOSTNAME_REMOTE}${STARSHIP_HOSTNAME_CORP}" ]]; then
+  export STARSHIP_HOSTNAME_LOCAL="${HOSTNAME%%.*}"
+fi
 
 if command -v starship &> /dev/null; then
   eval "$(starship init bash)"
