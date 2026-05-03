@@ -49,12 +49,12 @@ answer_yes() {
 # --- Configuration ---
 REPO_URL="https://github.com/mattkorwel/dotfiles.git"
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
-ORI_REPO_URL="https://github.com/mattkorwel/ori.git"
+
 VAULT_REPO_URL="https://github.com/mattkorwel/.agents.git"
 
 DOTFILES_DIR="$HOME/dev/dotfiles"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
-ORI_DIR="$HOME/dev/ori"
+
 VAULT_DIR="$HOME/dev/.agents"
 
 export DOTFILES_BACKUP_DIR="$DOTFILES_DIR/.backups"
@@ -186,22 +186,24 @@ if [[ -d "$PRIVATE_DIR" ]]; then
   if [[ -d "$CLOUDCODE_SRC/commands" ]]; then
     backup_and_link "$CLOUDCODE_SRC/commands" "$CLOUDCODE_DST/commands"
   fi
+
+  # ~/.ori/{classes,bootstrap}.toml: per-user policy that travels with
+  # dotfiles. Sharable across machines (no host-specific paths in there).
+  ORI_CFG_SRC="$PRIVATE_DIR/configs/ori"
+  ORI_CFG_DST="$HOME/.ori"
+  mkdir -p "$ORI_CFG_DST"
+  for f in classes.toml bootstrap.toml; do
+    [[ -f "$ORI_CFG_SRC/$f" ]] && backup_and_link "$ORI_CFG_SRC/$f" "$ORI_CFG_DST/$f"
+  done
 fi
 
-# --- 6. Ori (build the binary) ---
-echo
-ans=$(answer_yes "❓ Clone & build ori (the agentic context CLI)? (Y/n) ")
-if [[ ! "$ans" =~ ^[Nn]$ ]]; then
-  ensure_gh_auth
-  clone_or_pull "$ORI_REPO_URL" "$ORI_DIR" --gh
-
-  if [[ -x "$ORI_DIR/build.sh" ]]; then
-    echo "🔨 Building ori..."
-    (cd "$ORI_DIR" && ./build.sh)
-  else
-    echo "⚠️  $ORI_DIR/build.sh not found; skipping ori build." >&2
-  fi
-fi
+# NOTE: ori binary install used to live here (clone + build). Removed
+# because `ori workshop bootstrap` already scp's a cross-built binary to
+# the remote BEFORE running this installer, so cloning + rebuilding is
+# wasteful. On your primary mac, install ori once via a one-time
+# `cd ~/dev/ori && ./build.sh` (or use `ori workshop bootstrap` from
+# another machine you already have ori on). The post-install section
+# below skips silently if ori isn't installed.
 
 # --- 7. Vault (.agents) + cross-harness AGENTS.md/skills symlinks ---
 echo
