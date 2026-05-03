@@ -21,10 +21,8 @@
 #   2. Symlink shell + tool configs
 #   3. Zsh plugins + tool completions
 #   4. Mise + runtimes
-#   5. Private dotfiles (clone, link cloudcode + ori configs + ssh config)
-#   6. Ori binary (download from GitHub Releases) + `ori install`
-#      (`ori install` clones the vault, writes cloudcode.json, links
-#       AGENTS.md+skills into every harness, installs the git hook, audits)
+#   5. Private dotfiles (clone, link configs, then run private/install.sh
+#      which handles operator-only ori setup)
 
 set -e
 
@@ -204,33 +202,15 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     chmod 700 "$HOME/.ssh"
     backup_and_link "$PRIVATE_DIR/configs/ssh/config" "$HOME/.ssh/config"
   fi
-fi
 
-# --- 6. Ori binary + `ori install` ---
-# fetch_ori downloads the matching release binary into ~/.local/bin/ori.
-# `ori install` then clones the vault (per ~/.ori/vaults.toml), writes
-# cloudcode.json, links AGENTS.md+skills into every harness, installs
-# the git pre-commit hook, and runs the fortification audit. Both steps
-# are idempotent.
-echo
-
-# Stash $GITHUB_PAT to ~/.ori/github-pat so subsequent steps (and every
-# future invocation, even with no env) can authenticate. Mirrors what
-# `ori workshop bootstrap` does for remotes via scp in step 1.
-if [[ ! -r "$HOME/.ori/github-pat" && -n "${GITHUB_PAT:-}" ]]; then
-  echo "🔐 Stashing \$GITHUB_PAT → ~/.ori/github-pat (mode 0600)"
-  mkdir -p "$HOME/.ori"
-  touch "$HOME/.ori/github-pat"
-  chmod 600 "$HOME/.ori/github-pat"
-  printf '%s' "$GITHUB_PAT" > "$HOME/.ori/github-pat"
-fi
-
-# shellcheck disable=SC1091
-source "$DOTFILES_DIR/lib/ori-fetch.sh"
-if fetch_ori --dest "$HOME/.local/bin/ori"; then
-  "$HOME/.local/bin/ori" install || echo "⚠️  ori install reported issues (continuing)"
-else
-  echo "⚠️  ori not installed; skipping 'ori install'. Re-run after fixing." >&2
+  # Hand off to the private installer for ori (operator-only: PAT stash,
+  # ori binary, ori install). Skipped entirely when --no-private (i.e.
+  # remote workers, where bootstrap already handles all of this).
+  if [[ -x "$PRIVATE_DIR/install.sh" ]]; then
+    echo
+    echo "▶️  Running $PRIVATE_DIR/install.sh"
+    "$PRIVATE_DIR/install.sh"
+  fi
 fi
 
 echo
