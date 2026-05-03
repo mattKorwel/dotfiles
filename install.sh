@@ -146,13 +146,12 @@ fi
 
 if [[ -d "$PRIVATE_DIR" ]]; then
   echo
-  echo "🔗 Linking cloudcode config from $PRIVATE_DIR..."
+  echo "🔗 Linking cloudcode plugins + commands from $PRIVATE_DIR..."
+  echo "   (cloudcode.json itself is per-machine; section 8 below runs"
+  echo "    'ori mcp install' to generate it with this host's paths.)"
   CLOUDCODE_SRC="$PRIVATE_DIR/configs/cloudcode"
   CLOUDCODE_DST="$HOME/.config/cloudcode"
   mkdir -p "$CLOUDCODE_DST/plugins"
-  if [[ -f "$CLOUDCODE_SRC/cloudcode.json" ]]; then
-    backup_and_link "$CLOUDCODE_SRC/cloudcode.json" "$CLOUDCODE_DST/cloudcode.json"
-  fi
   if [[ -d "$CLOUDCODE_SRC/plugins" ]]; then
     for f in "$CLOUDCODE_SRC/plugins/"*.js; do
       [[ -f "$f" ]] || continue
@@ -218,11 +217,10 @@ fi
 if [[ -x "$HOME/dev/bin/ori" && -d "$VAULT_DIR" ]]; then
   echo
   echo "⚙️  Wiring ori into cloudcode + git hook..."
-  # MCP install registers ori in cloudcode.json and adds vault deny rules.
-  # Idempotent. Skipped when no cloudcode.json exists yet (no cloudcode installed).
-  if [[ -f "$HOME/.config/cloudcode/cloudcode.json" ]]; then
-    "$HOME/dev/bin/ori" mcp install || echo "⚠️  ori mcp install failed"
-  fi
+  # `ori mcp install` writes ~/.config/cloudcode/cloudcode.json with THIS
+  # host's absolute paths (binary, vault). Per-machine config; never share
+  # it across hosts. Idempotent — re-running just refreshes the entries.
+  "$HOME/dev/bin/ori" mcp install || echo "⚠️  ori mcp install failed (cloudcode may not be installed on this host yet)"
   # Pre-commit schema validator on the vault git repo.
   "$HOME/dev/bin/ori" vault install-hook || true
   # Final sanity check.
