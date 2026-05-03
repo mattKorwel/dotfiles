@@ -1,7 +1,7 @@
 # --- 1. Private Extensions Hook (Load Environment Variables First) ---
 # Load private/corporate configurations if they exist
-PRIVATE_BOOTSTRAP="$HOME/dev/dotfiles-private/bootstrap.sh"
-[[ -f "$PRIVATE_BOOTSTRAP" ]] && source "$PRIVATE_BOOTSTRAP"
+PRIVATE_SHELL_INIT="$HOME/dev/dotfiles-private/shell-init.sh"
+[[ -f "$PRIVATE_SHELL_INIT" ]] && source "$PRIVATE_SHELL_INIT"
 
 # --- 2. Environment Detection ---
 if [[ "$OSTYPE" == "darwin"* ]]; then

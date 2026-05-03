@@ -1,55 +1,51 @@
 #!/bin/bash
+#
+# dotfiles installer — single entry point for mac & linux setup.
+#
+# Run on a fresh machine:
+#   curl -fsSL https://raw.githubusercontent.com/mattkorwel/dotfiles/main/install.sh | bash
+# Or after cloning:
+#   ~/dev/dotfiles/install.sh
+#
+# Idempotent: safe to re-run any time. Each step skips itself if already done.
+#
+# Sections:
+#   1. Bootstrap dotfiles repo (clone or pull)
+#   2. Symlink shell + tool configs
+#   3. Zsh plugins + tool completions
+#   4. Mise + runtimes
+#   5. Private dotfiles (clone, link cloudcode + agent configs)
+#   6. Ori (clone, build)
+#   7. Vault (.agents) (clone, link AGENTS.md + skills into every harness)
+#   8. Ori post-install (mcp install + git pre-commit hook + audit)
 
 set -e
 
 # --- Configuration ---
 REPO_URL="https://github.com/mattkorwel/dotfiles.git"
-DOTFILES_DIR="$HOME/dev/dotfiles"
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
+ORI_REPO_URL="https://github.com/mattkorwel/ori.git"
+VAULT_REPO_URL="https://github.com/mattkorwel/.agents.git"
+
+DOTFILES_DIR="$HOME/dev/dotfiles"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
-BACKUP_DIR="$DOTFILES_DIR/.backups"
+ORI_DIR="$HOME/dev/ori"
+VAULT_DIR="$HOME/dev/.agents"
 
-echo "🚀 Initializing Dotfiles from $DOTFILES_DIR..."
+export DOTFILES_BACKUP_DIR="$DOTFILES_DIR/.backups"
 
-# --- Helper Functions ---
-
-pkg_install() {
-  local pkg=$1
-  if ! command -v "$pkg" &>/dev/null; then
-    echo "📦 $pkg not found. Installing..."
+# --- 1. Bootstrap dotfiles repo ---
+echo "🚀 Initializing dotfiles..."
+if [[ ! -d "$DOTFILES_DIR/.git" ]]; then
+  echo "📡 Cloning dotfiles to $DOTFILES_DIR..."
+  command -v git >/dev/null 2>&1 || {
     if [[ "$OSTYPE" == "darwin"* ]]; then
-      if command -v brew &>/dev/null; then
-        brew install "$pkg"
-      else
-        echo "⚠️ Homebrew missing. Cannot install $pkg."
-        exit 1
-      fi
+      command -v brew >/dev/null 2>&1 || { echo "Install Homebrew first." >&2; exit 1; }
+      brew install git
     else
-      sudo apt-get update && sudo apt-get install -y "$pkg"
+      sudo apt-get update && sudo apt-get install -y git
     fi
-  fi
-}
-
-backup_and_link() {
-  local src=$1
-  local dst=$2
-  
-  if [[ -f "$dst" && ! -L "$dst" ]]; then
-    mkdir -p "$BACKUP_DIR"
-    local filename=$(basename "$dst")
-    echo "💾 Backing up $filename to $BACKUP_DIR"
-    mv "$dst" "$BACKUP_DIR/${filename}.bak.$(date +%F_%T)"
-  fi
-
-  mkdir -p "$(dirname "$dst")"
-  ln -sf "$src" "$dst"
-}
-
-# --- 1. Bootstrap: Repository ---
-
-if [ ! -d "$DOTFILES_DIR/.git" ]; then
-  pkg_install git
-  echo "📡 Bootstrapping: Cloning dotfiles to $DOTFILES_DIR..."
+  }
   mkdir -p "$(dirname "$DOTFILES_DIR")"
   git clone "$REPO_URL" "$DOTFILES_DIR"
 else
@@ -57,152 +53,181 @@ else
   git -C "$DOTFILES_DIR" pull --ff-only
 fi
 
-# --- 2. Symlinks & Configuration ---
+# Now we can source the shared helpers.
+# shellcheck disable=SC1091
+source "$DOTFILES_DIR/lib/symlink.sh"
 
-echo "🔗 Setting up symlinks..."
+# --- 2. Symlink shell + tool configs ---
+echo
+echo "🔗 Linking configs..."
 
-# Shell Profiles
 for f in .zshrc .bashrc .bash_profile; do
-  if [[ -f "$DOTFILES_DIR/profiles/$f" ]]; then
-    backup_and_link "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
-  fi
+  [[ -f "$DOTFILES_DIR/profiles/$f" ]] && backup_and_link "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
 done
 
-# Cross-Platform Configs
-backup_and_link "$DOTFILES_DIR/.config/mise/config.toml" "$HOME/.config/mise/config.toml"
-backup_and_link "$DOTFILES_DIR/.config/starship.toml"    "$HOME/.config/starship.toml"
+backup_and_link "$DOTFILES_DIR/.config/mise/config.toml"     "$HOME/.config/mise/config.toml"
+backup_and_link "$DOTFILES_DIR/.config/starship.toml"        "$HOME/.config/starship.toml"
 backup_and_link "$DOTFILES_DIR/.config/git/gitconfig.shared" "$HOME/.config/git/gitconfig.shared"
-backup_and_link "$DOTFILES_DIR/.gemini/settings.json"    "$HOME/.gemini/settings.json"
+backup_and_link "$DOTFILES_DIR/.gemini/settings.json"        "$HOME/.gemini/settings.json"
 
-# macOS Specific
 if [[ "$OSTYPE" == "darwin"* ]]; then
   backup_and_link "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
 fi
 
-# Unix/Linux Specific (Tmux)
 if [[ "$OSTYPE" == "darwin"* || "$OSTYPE" == "linux-gnu"* ]]; then
   backup_and_link "$DOTFILES_DIR/.config/tmux/tmux.conf" "$HOME/.tmux.conf"
 fi
 
-# Git Configuration (Local Include)
-# This appends a pointer to your local ~/.gitconfig so it uses your shared settings
-if [[ ! -f "$HOME/.gitconfig" ]]; then
-  touch "$HOME/.gitconfig"
-fi
+# Git: include shared config from ~/.gitconfig.
+[[ -f "$HOME/.gitconfig" ]] || touch "$HOME/.gitconfig"
 if ! grep -q "gitconfig.shared" "$HOME/.gitconfig"; then
-  echo "📝 Including shared git config in $HOME/.gitconfig"
+  echo "📝 Adding shared git config include to ~/.gitconfig"
   git config --global include.path "$DOTFILES_DIR/.config/git/gitconfig.shared"
 fi
 
-# --- 3. Shell Plugins (Manual) ---
-
-echo "🔌 Setting up Zsh plugins..."
+# --- 3. Zsh plugins + completions ---
+echo
+echo "🔌 Setting up zsh plugins..."
 ZSH_PLUGIN_DIR="$HOME/.local/share/zsh-plugins"
 mkdir -p "$ZSH_PLUGIN_DIR"
-
-PLUGINS=(
-  "zsh-users/zsh-autosuggestions"
-  "zsh-users/zsh-syntax-highlighting"
-  "zsh-users/zsh-completions"
-)
-
-for plugin in "${PLUGINS[@]}"; do
+for plugin in "zsh-users/zsh-autosuggestions" "zsh-users/zsh-syntax-highlighting" "zsh-users/zsh-completions"; do
   name=$(basename "$plugin")
-  if [ ! -d "$ZSH_PLUGIN_DIR/$name" ]; then
+  if [[ ! -d "$ZSH_PLUGIN_DIR/$name" ]]; then
     echo "📥 Cloning $name..."
     git clone "https://github.com/$plugin.git" "$ZSH_PLUGIN_DIR/$name"
   else
-    echo "upgrading $name..."
     git -C "$ZSH_PLUGIN_DIR/$name" pull --quiet
   fi
 done
 
-# --- 4. Tool Completions (Automated) ---
-
-echo "⚙️ Generating shell completions..."
+echo "⚙️  Generating shell completions..."
 ZSH_COMP_DIR="$HOME/.local/share/zsh-completions"
 mkdir -p "$ZSH_COMP_DIR"
+command -v mise >/dev/null && mise completion zsh > "$ZSH_COMP_DIR/_mise"
+command -v gh   >/dev/null && gh   completion -s zsh > "$ZSH_COMP_DIR/_gh"
+command -v npm  >/dev/null && npm  completion > "$ZSH_COMP_DIR/npm.zsh"
 
-# Mise
-if command -v mise &>/dev/null; then
-  mise completion zsh > "$ZSH_COMP_DIR/_mise"
+if command -v gcloud >/dev/null; then
+  GCLOUD_SDK_ROOT=$(gcloud info --format="value(basic.sdk_root)" 2>/dev/null || true)
+elif command -v mise >/dev/null; then
+  GCLOUD_SDK_ROOT=$(mise where gcloud 2>/dev/null || true)
 fi
-
-# GitHub CLI
-if command -v gh &>/dev/null; then
-  gh completion -s zsh > "$ZSH_COMP_DIR/_gh"
-fi
-
-# NPM
-if command -v npm &>/dev/null; then
-  npm completion > "$ZSH_COMP_DIR/npm.zsh"
-fi
-
-# GCloud
-# Note: GCloud completions are usually sourced from the SDK path.
-# We will create a pointer script.
-if command -v gcloud &>/dev/null; then
-  GCLOUD_SDK_ROOT=$(gcloud info --format="value(basic.sdk_root)")
-elif command -v mise &>/dev/null; then
-  GCLOUD_SDK_ROOT=$(mise where gcloud 2>/dev/null)
-fi
-
-if [[ -d "$GCLOUD_SDK_ROOT" ]]; then
+if [[ -n "${GCLOUD_SDK_ROOT:-}" && -d "$GCLOUD_SDK_ROOT" ]]; then
   echo "source '$GCLOUD_SDK_ROOT/completion.zsh.inc'" > "$ZSH_COMP_DIR/gcloud.zsh"
 fi
 
-# Usage
-# (Skipping automated completion generation for 'usage' tool due to complex flags)
-
-# --- 5. Tools: Mise & Runtimes ---
-
-# Mise (Quiet install) - STANDALONE VERSION
+# --- 4. Mise + runtimes ---
+echo
 if [[ ! -f "$HOME/.local/bin/mise" ]]; then
-  echo "🚀 Installing Mise..."
+  echo "🚀 Installing mise..."
   mkdir -p "$HOME/.local/bin"
-  curl https://mise.jdx.dev/install.sh | sh > /dev/null
+  curl -fsSL https://mise.jdx.dev/install.sh | sh > /dev/null
 fi
-
-MISE_BIN="$HOME/.local/bin/mise"
-
+export MISE_BIN="$HOME/.local/bin/mise"
 if [[ -f "$MISE_BIN" ]]; then
   export MISE_YES=1
   export PATH="$HOME/.local/bin:$PATH"
-  
-  echo "📡 Configuring Mise & Installing Tools (Node 24, Gemini, etc.)..."
+  echo "📡 Configuring mise + installing tools..."
   "$MISE_BIN" trust "$DOTFILES_DIR"
   "$MISE_BIN" install
 fi
 
-# --- 6. GitHub & Private Extensions ---
-
-# Private repos (dotfiles-private and ori) require authentication
-ensure_gh_auth() {
-  if ! "$MISE_BIN" exec -- gh auth status &>/dev/null; then
-    echo "🔐 GitHub authentication required for private repositories..."
-    "$MISE_BIN" exec -- gh auth login
-  fi
-}
-
-# 6a. Private Dotfiles
-if [ ! -d "$PRIVATE_DIR" ]; then
-  read -p "❓ Clone private dotfiles? (y/n) " -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
+# --- 5. Private dotfiles (cloudcode config + corp shell-init) ---
+echo
+if [[ ! -d "$PRIVATE_DIR" ]]; then
+  read -r -p "❓ Clone private dotfiles ($PRIVATE_REPO_URL)? (y/N) " ans
+  if [[ "$ans" =~ ^[Yy]$ ]]; then
     ensure_gh_auth
-    echo "📡 Cloning private dotfiles..."
-    "$MISE_BIN" exec -- gh repo clone "$PRIVATE_REPO_URL" "$PRIVATE_DIR"
+    clone_or_pull "$PRIVATE_REPO_URL" "$PRIVATE_DIR" --gh
   fi
 else
-  echo "📡 Updating private dotfiles..."
-  git -C "$PRIVATE_DIR" pull --ff-only
+  clone_or_pull "$PRIVATE_REPO_URL" "$PRIVATE_DIR"
 fi
 
-# Run private installation logic if directory exists
-if [[ -d "$PRIVATE_DIR" && -f "$PRIVATE_DIR/install.sh" ]]; then
-  echo "🛠️ Running private installation script..."
-  bash "$PRIVATE_DIR/install.sh"
+if [[ -d "$PRIVATE_DIR" ]]; then
+  echo
+  echo "🔗 Linking cloudcode config from $PRIVATE_DIR..."
+  CLOUDCODE_SRC="$PRIVATE_DIR/configs/cloudcode"
+  CLOUDCODE_DST="$HOME/.config/cloudcode"
+  mkdir -p "$CLOUDCODE_DST/plugins"
+  if [[ -f "$CLOUDCODE_SRC/cloudcode.json" ]]; then
+    backup_and_link "$CLOUDCODE_SRC/cloudcode.json" "$CLOUDCODE_DST/cloudcode.json"
+  fi
+  if [[ -d "$CLOUDCODE_SRC/plugins" ]]; then
+    for f in "$CLOUDCODE_SRC/plugins/"*.js; do
+      [[ -f "$f" ]] || continue
+      backup_and_link "$f" "$CLOUDCODE_DST/plugins/$(basename "$f")"
+    done
+  fi
+  if [[ -d "$CLOUDCODE_SRC/commands" ]]; then
+    backup_and_link "$CLOUDCODE_SRC/commands" "$CLOUDCODE_DST/commands"
+  fi
 fi
 
-echo "✅ Done! Reloading shell..."
-exec zsh -l
+# --- 6. Ori (build the binary) ---
+echo
+read -r -p "❓ Clone & build ori (the agentic context CLI)? (Y/n) " ans
+if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+  ensure_gh_auth
+  clone_or_pull "$ORI_REPO_URL" "$ORI_DIR" --gh
+
+  if [[ -x "$ORI_DIR/build.sh" ]]; then
+    echo "🔨 Building ori..."
+    (cd "$ORI_DIR" && ./build.sh)
+  else
+    echo "⚠️  $ORI_DIR/build.sh not found; skipping ori build." >&2
+  fi
+fi
+
+# --- 7. Vault (.agents) + cross-harness AGENTS.md/skills symlinks ---
+echo
+read -r -p "❓ Clone the .agents vault? (Y/n) " ans
+if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+  ensure_gh_auth
+  clone_or_pull "$VAULT_REPO_URL" "$VAULT_DIR" --gh
+
+  VAULT_AGENTS="$VAULT_DIR/AGENTS.md"
+  if [[ -f "$VAULT_AGENTS" ]]; then
+    # Generic vault aliases. Some agents look for ~/.agents or ~/.ai.
+    for target in "$HOME/.agents" "$HOME/.ai"; do
+      backup_and_link "$VAULT_DIR" "$target"
+    done
+
+    # Mandate file every harness wants to read at startup.
+    for target in \
+      "$HOME/.gemini/GEMINI.md" \
+      "$HOME/.claude/CLAUDE.md" \
+      "$HOME/.codex/AGENTS.md" \
+      "$HOME/.config/cloudcode/AGENTS.md" \
+    ; do
+      backup_and_link "$VAULT_AGENTS" "$target"
+    done
+
+    # Skills directory. Skip .gemini (it scans ~/.agents/skills directly
+    # via the symlink above; double-linking causes duplicate discovery).
+    if [[ -d "$VAULT_DIR/skills" ]]; then
+      for root in "$HOME/.claude" "$HOME/.codex" "$HOME/.config/cloudcode"; do
+        mkdir -p "$root"
+        backup_and_link "$VAULT_DIR/skills" "$root/skills"
+      done
+    fi
+  fi
+fi
+
+# --- 8. Ori post-install (only if ori + vault both present) ---
+if [[ -x "$HOME/dev/bin/ori" && -d "$VAULT_DIR" ]]; then
+  echo
+  echo "⚙️  Wiring ori into cloudcode + git hook..."
+  # MCP install registers ori in cloudcode.json and adds vault deny rules.
+  # Idempotent. Skipped when no cloudcode.json exists yet (no cloudcode installed).
+  if [[ -f "$HOME/.config/cloudcode/cloudcode.json" ]]; then
+    "$HOME/dev/bin/ori" mcp install || echo "⚠️  ori mcp install failed"
+  fi
+  # Pre-commit schema validator on the vault git repo.
+  "$HOME/dev/bin/ori" vault install-hook || true
+  # Final sanity check.
+  "$HOME/dev/bin/ori" vault audit-fortification || true
+fi
+
+echo
+echo "✅ Done. Reload your shell (or run: exec zsh -l)"
