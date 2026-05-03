@@ -82,7 +82,13 @@ clone_or_pull() {
 }
 
 # ensure_gh_auth
-#   Prompt for `gh auth login` if not authenticated. Honors $MISE_BIN.
+#   Ensure `gh` is authenticated. Honors $MISE_BIN.
+#
+#   Three modes, in priority order:
+#     1. $GITHUB_PAT set → non-interactive: pipe to `gh auth login --with-token`
+#     2. tty present → interactive `gh auth login` (browser flow)
+#     3. no tty + no PAT → fail loudly so the caller knows the install will
+#        skip private-repo steps
 ensure_gh_auth() {
   local gh_cmd=(gh)
   if [[ -n "${MISE_BIN:-}" ]] && [[ -x "$MISE_BIN" ]]; then
@@ -91,6 +97,17 @@ ensure_gh_auth() {
   if "${gh_cmd[@]}" auth status >/dev/null 2>&1; then
     return 0
   fi
-  echo "🔐 GitHub authentication required for private repositories..."
-  "${gh_cmd[@]}" auth login
+  if [[ -n "${GITHUB_PAT:-}" ]]; then
+    echo "🔐 Authenticating gh with $GITHUB_PAT (non-interactive)..."
+    echo "${GITHUB_PAT}" | "${gh_cmd[@]}" auth login --with-token
+    return $?
+  fi
+  if [[ -t 0 ]] && [[ -t 1 ]]; then
+    echo "🔐 GitHub authentication required for private repositories..."
+    "${gh_cmd[@]}" auth login
+    return $?
+  fi
+  echo "⚠️  gh not authenticated and no \$GITHUB_PAT and no tty. Skipping." >&2
+  echo "   Set GITHUB_PAT=<token> in env to auth non-interactively." >&2
+  return 1
 }
