@@ -38,5 +38,13 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ## 🎯 Architecture
-- **Public Repo**: Core configuration, generic tools, and cross-platform logic.
-- **Private Extensions**: Machine-specific overrides and sensitive scripts (handled via a modular hook system in `.zshrc`/`.bashrc`/`profile.ps1`).
+
+Three repos, one installer:
+
+- **`dotfiles`** (this one, public) — shell rc / starship / mise / aerospace / tmux / git config. The single `install.sh` here is the entry point for everything.
+- **`dotfiles-private`** (private) — corp-host shell-init (`shell-init.sh` sourced at every shell start) + cloudcode config (`configs/cloudcode/`).
+- **`ori`** + **`.agents`** vault — the agentic context CLI and its content store (cloned + symlinked by `install.sh` if you say yes).
+
+`dotfiles/install.sh` does it all: clones the public repo, links shell + tool configs, installs zsh plugins + completions, runs `mise install`, prompts to clone the private dotfiles, prompts to clone & build ori, prompts to clone the .agents vault, then auto-wires ori into cloudcode (`ori mcp install`) and installs the vault git pre-commit hook (`ori vault install-hook`). Re-run any time; every step is idempotent.
+
+For the design behind ori + the .agents vault, see [`~/dev/.agents/projects/distributed-arch/phase-1/`](https://github.com/mattkorwel/.agents/tree/main/projects/distributed-arch/phase-1) (private).
