@@ -192,7 +192,7 @@ if [[ -d "$PRIVATE_DIR" ]]; then
   ORI_CFG_SRC="$PRIVATE_DIR/configs/ori"
   ORI_CFG_DST="$HOME/.ori"
   mkdir -p "$ORI_CFG_DST"
-  for f in classes.toml bootstrap.toml; do
+  for f in classes.toml bootstrap.toml vaults.toml; do
     [[ -f "$ORI_CFG_SRC/$f" ]] && backup_and_link "$ORI_CFG_SRC/$f" "$ORI_CFG_DST/$f"
   done
 fi
