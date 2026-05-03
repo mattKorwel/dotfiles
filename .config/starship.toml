@@ -3,7 +3,7 @@ add_newline = true
 
 # The main prompt layout
 format = """
-$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python${env_var.HOSTNAME_LOCAL}${env_var.HOSTNAME_WORK}${env_var.HOSTNAME_REMOTE}${env_var.HOSTNAME_ROAM}$time
+$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python${env_var.HOSTNAME_LOCAL}${env_var.HOSTNAME_WORK}${env_var.HOSTNAME_REMOTE}${env_var.HOSTNAME_CORP}${env_var.HOSTNAME_ROAM}$time
 $character"""
 
 [fill]
@@ -67,6 +67,11 @@ format = "[$env_value]($style) "
 [env_var.HOSTNAME_REMOTE]
 variable = "STARSHIP_HOSTNAME_REMOTE"
 style = "bold #ff5f5f"
+format = "[$env_value]($style) "
+
+[env_var.HOSTNAME_CORP]
+variable = "STARSHIP_HOSTNAME_CORP"
+style = "bold #ff8800"
 format = "[$env_value]($style) "
 
 [env_var.HOSTNAME_ROAM]
