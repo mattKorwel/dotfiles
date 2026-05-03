@@ -214,6 +214,18 @@ fi
 # the git pre-commit hook, and runs the fortification audit. Both steps
 # are idempotent.
 echo
+
+# Stash $GITHUB_PAT to ~/.ori/github-pat so subsequent steps (and every
+# future invocation, even with no env) can authenticate. Mirrors what
+# `ori workshop bootstrap` does for remotes via scp in step 1.
+if [[ ! -r "$HOME/.ori/github-pat" && -n "${GITHUB_PAT:-}" ]]; then
+  echo "🔐 Stashing \$GITHUB_PAT → ~/.ori/github-pat (mode 0600)"
+  mkdir -p "$HOME/.ori"
+  touch "$HOME/.ori/github-pat"
+  chmod 600 "$HOME/.ori/github-pat"
+  printf '%s' "$GITHUB_PAT" > "$HOME/.ori/github-pat"
+fi
+
 # shellcheck disable=SC1091
 source "$DOTFILES_DIR/lib/ori-fetch.sh"
 if fetch_ori --dest "$HOME/.local/bin/ori"; then
