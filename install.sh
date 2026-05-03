@@ -21,6 +21,31 @@
 
 set -e
 
+# --- Non-interactive mode ---
+# Set ORI_INSTALL_YES=1 (or pass --yes) to skip all prompts and default to YES
+# for: clone private dotfiles, clone & build ori, clone the .agents vault.
+# Combine with $GITHUB_PAT for fully unattended remote installs:
+#   GITHUB_PAT=ghp_xxx ORI_INSTALL_YES=1 bash <(curl -fsSL .../install.sh)
+for arg in "$@"; do
+  case "$arg" in
+    --yes|-y) ORI_INSTALL_YES=1 ;;
+  esac
+done
+
+# answer_yes <prompt>
+#   Echoes "y" if ORI_INSTALL_YES=1, else prompts the user. Lets the rest
+#   of the script use one shape: `if [[ "$(answer_yes '...')" =~ ^[Yy]$ ]]`
+answer_yes() {
+  local prompt=$1
+  if [[ "${ORI_INSTALL_YES:-0}" == "1" ]]; then
+    echo "y"
+    return
+  fi
+  local ans
+  read -r -p "$prompt" ans
+  echo "$ans"
+}
+
 # --- Configuration ---
 REPO_URL="https://github.com/mattkorwel/dotfiles.git"
 PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
@@ -135,7 +160,7 @@ fi
 # --- 5. Private dotfiles (cloudcode config + corp shell-init) ---
 echo
 if [[ ! -d "$PRIVATE_DIR" ]]; then
-  read -r -p "❓ Clone private dotfiles ($PRIVATE_REPO_URL)? (y/N) " ans
+  ans=$(answer_yes "❓ Clone private dotfiles ($PRIVATE_REPO_URL)? (y/N) ")
   if [[ "$ans" =~ ^[Yy]$ ]]; then
     ensure_gh_auth
     clone_or_pull "$PRIVATE_REPO_URL" "$PRIVATE_DIR" --gh
@@ -165,7 +190,7 @@ fi
 
 # --- 6. Ori (build the binary) ---
 echo
-read -r -p "❓ Clone & build ori (the agentic context CLI)? (Y/n) " ans
+ans=$(answer_yes "❓ Clone & build ori (the agentic context CLI)? (Y/n) ")
 if [[ ! "$ans" =~ ^[Nn]$ ]]; then
   ensure_gh_auth
   clone_or_pull "$ORI_REPO_URL" "$ORI_DIR" --gh
@@ -180,7 +205,7 @@ fi
 
 # --- 7. Vault (.agents) + cross-harness AGENTS.md/skills symlinks ---
 echo
-read -r -p "❓ Clone the .agents vault? (Y/n) " ans
+ans=$(answer_yes "❓ Clone the .agents vault? (Y/n) ")
 if [[ ! "$ans" =~ ^[Nn]$ ]]; then
   ensure_gh_auth
   clone_or_pull "$VAULT_REPO_URL" "$VAULT_DIR" --gh
