@@ -205,53 +205,22 @@ fi
 # another machine you already have ori on). The post-install section
 # below skips silently if ori isn't installed.
 
-# --- 7. Vault (.agents) + cross-harness AGENTS.md/skills symlinks ---
+# --- 7. Vault clone (.agents repo) ---
 echo
 ans=$(answer_yes "❓ Clone the .agents vault? (Y/n) ")
 if [[ ! "$ans" =~ ^[Nn]$ ]]; then
   ensure_gh_auth
   clone_or_pull "$VAULT_REPO_URL" "$VAULT_DIR" --gh
-
-  VAULT_AGENTS="$VAULT_DIR/AGENTS.md"
-  if [[ -f "$VAULT_AGENTS" ]]; then
-    # Generic vault aliases. Some agents look for ~/.agents or ~/.ai.
-    for target in "$HOME/.agents" "$HOME/.ai"; do
-      backup_and_link "$VAULT_DIR" "$target"
-    done
-
-    # Mandate file every harness wants to read at startup.
-    for target in \
-      "$HOME/.gemini/GEMINI.md" \
-      "$HOME/.claude/CLAUDE.md" \
-      "$HOME/.codex/AGENTS.md" \
-      "$HOME/.config/cloudcode/AGENTS.md" \
-    ; do
-      backup_and_link "$VAULT_AGENTS" "$target"
-    done
-
-    # Skills directory. Skip .gemini (it scans ~/.agents/skills directly
-    # via the symlink above; double-linking causes duplicate discovery).
-    if [[ -d "$VAULT_DIR/skills" ]]; then
-      for root in "$HOME/.claude" "$HOME/.codex" "$HOME/.config/cloudcode"; do
-        mkdir -p "$root"
-        backup_and_link "$VAULT_DIR/skills" "$root/skills"
-      done
-    fi
-  fi
 fi
 
-# --- 8. Ori post-install (only if ori + vault both present) ---
-if [[ -x "$HOME/dev/bin/ori" && -d "$VAULT_DIR" ]]; then
+# --- 8. ori install (cloudcode.json + harness symlinks + hook + audit) ---
+# One verb does the whole job. Skipped silently if ori isn't installed
+# yet (e.g. user is running the dotfiles installer before ever putting
+# ori on this host).
+ORI_BIN=$(command -v ori || echo "$HOME/.local/bin/ori")
+if [[ -x "$ORI_BIN" ]]; then
   echo
-  echo "⚙️  Wiring ori into cloudcode + git hook..."
-  # `ori mcp install` writes ~/.config/cloudcode/cloudcode.json with THIS
-  # host's absolute paths (binary, vault). Per-machine config; never share
-  # it across hosts. Idempotent — re-running just refreshes the entries.
-  "$HOME/dev/bin/ori" mcp install || echo "⚠️  ori mcp install failed (cloudcode may not be installed on this host yet)"
-  # Pre-commit schema validator on the vault git repo.
-  "$HOME/dev/bin/ori" vault install-hook || true
-  # Final sanity check.
-  "$HOME/dev/bin/ori" vault audit-fortification || true
+  "$ORI_BIN" install || echo "⚠️  ori install reported issues (continuing)"
 fi
 
 echo
