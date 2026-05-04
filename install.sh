@@ -101,6 +101,7 @@ done
 backup_and_link "$DOTFILES_DIR/.config/mise/config.toml"     "$HOME/.config/mise/config.toml"
 backup_and_link "$DOTFILES_DIR/.config/starship.toml"        "$HOME/.config/starship.toml"
 backup_and_link "$DOTFILES_DIR/.config/git/gitconfig.shared" "$HOME/.config/git/gitconfig.shared"
+backup_and_link "$DOTFILES_DIR/.config/git/allowed_signers"  "$HOME/.config/git/allowed_signers"
 backup_and_link "$DOTFILES_DIR/.gemini/settings.json"        "$HOME/.gemini/settings.json"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
