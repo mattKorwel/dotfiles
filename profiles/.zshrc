@@ -8,15 +8,10 @@ unset _f
 
 # --- 2. Environment Detection ---
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  # macOS (Homebrew)
-  [[ -f /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
   ALIAS_LS_COLOR="-G"
 else
-  # Linux / WSL
   export COLORTERM=truecolor
   ALIAS_LS_COLOR="--color=auto"
-  # Support Linuxbrew if installed
-  [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
 # --- 2. Tool Initialization (Mise, Starship, Zoxide) ---
@@ -93,7 +88,6 @@ if command -v fzf &> /dev/null; then
   else
     # Fallback to sourcing files for older versions
     FZF_BASE=""
-    [[ -d /opt/homebrew/opt/fzf ]] && FZF_BASE="/opt/homebrew/opt/fzf"
     [[ -d /usr/share/doc/fzf ]] && FZF_BASE="/usr/share/doc/fzf"
     if [[ -n "$FZF_BASE" ]]; then
        [[ -f "$FZF_BASE/shell/completion.zsh" ]] && source "$FZF_BASE/shell/completion.zsh"
