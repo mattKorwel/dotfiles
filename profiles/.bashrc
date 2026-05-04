@@ -5,14 +5,8 @@ for _f in "$HOME"/.bashrc.d/*.sh; do [[ -r "$_f" ]] && . "$_f"; done
 unset _f
 
 # --- 2. Environment Detection ---
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # macOS (Homebrew)
-  [[ -f /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
-else
-  # Linux / WSL
+if [[ "$OSTYPE" != "darwin"* ]]; then
   export COLORTERM=truecolor
-  # Support Linuxbrew if installed
-  [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
 # --- 3. Tool Initialization (Mise, Starship, Zoxide) ---
