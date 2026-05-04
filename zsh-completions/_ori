@@ -1,0 +1,115 @@
+#compdef ori
+#
+# zsh completion for ori. Symlinked into ~/.local/share/zsh-completions/
+# by dotfiles install.sh §3, then loaded automatically by .zshrc.
+#
+# Two-stage completion for project/branch:
+#   ori start <TAB>                    → list projects (with trailing /)
+#   ori start <project>/<TAB>          → list that project's branches
+#                                        (always includes 'primary')
+
+_ori_start_target() {
+  local cur="${words[CURRENT]}"
+  if [[ "$cur" == */* ]]; then
+    local project="${cur%%/*}"
+    local -a branches
+    branches=(${(f)"$(ori pointer list --format=branches=$project 2>/dev/null)"})
+    compadd -P "$project/" -- $branches
+  else
+    local -a projects
+    projects=(${(f)"$(ori projects 2>/dev/null)"})
+    compadd -S '/' -- $projects
+  fi
+}
+
+_ori_workshops() {
+  local -a workshops
+  workshops=(${(f)"$(ori workshop list 2>/dev/null | awk 'NR>1 && $1!="" {print $1}')"})
+  compadd -- $workshops
+}
+
+_ori_projects() {
+  local -a projects
+  projects=(${(f)"$(ori projects 2>/dev/null)"})
+  compadd -- $projects
+}
+
+_ori() {
+  local context state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1:command:->cmd' \
+    '*::arg:->args'
+
+  case $state in
+    cmd)
+      local -a subs
+      subs=(
+        'start:start (or resume) a project/branch'
+        'shell:open a terminal next to the session'
+        'status:trail UI: live sessions'
+        's:alias for status'
+        'projects:list projects'
+        'p:alias for projects'
+        'pointer:manage pointers'
+        'workshop:manage workshops'
+        'doc:read/write project docs'
+        'session:manage sessions'
+        'install:wire ori into harnesses on this host'
+        'auth:manage credentials'
+        'mcp:MCP server commands'
+        'vault:vault management'
+        'project:project management'
+      )
+      _describe -t commands 'ori command' subs
+      ;;
+    args)
+      case $line[1] in
+        start|shell)
+          # Complete --workshop <id> if the previous word is --workshop;
+          # otherwise complete the project[/branch] target.
+          if [[ "${words[CURRENT-1]}" == "--workshop" ]]; then
+            _ori_workshops
+          else
+            _ori_start_target
+          fi
+          ;;
+        pointer)
+          if (( CURRENT == 2 )); then
+            local -a sub=(list show set state suspend resume abandon clear)
+            compadd -- $sub
+          else
+            _ori_start_target
+          fi
+          ;;
+        workshop)
+          if (( CURRENT == 2 )); then
+            local -a sub=(list show add remove ssh tmux bootstrap here)
+            compadd -- $sub
+          else
+            _ori_workshops
+          fi
+          ;;
+        doc)
+          if (( CURRENT == 2 )); then
+            local -a sub=(read append write)
+            compadd -- $sub
+          else
+            _ori_projects
+          fi
+          ;;
+        project)
+          if (( CURRENT == 2 )); then
+            local -a sub=(list show create)
+            compadd -- $sub
+          else
+            _ori_projects
+          fi
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_ori "$@"

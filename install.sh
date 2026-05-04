@@ -149,6 +149,13 @@ if [[ -n "${GCLOUD_SDK_ROOT:-}" && -d "$GCLOUD_SDK_ROOT" ]]; then
   echo "source '$GCLOUD_SDK_ROOT/completion.zsh.inc'" > "$ZSH_COMP_DIR/gcloud.zsh"
 fi
 
+# Static completion files shipped in this dotfiles repo.
+if [[ -d "$DOTFILES_DIR/zsh-completions" ]]; then
+  for f in "$DOTFILES_DIR/zsh-completions/"_* "$DOTFILES_DIR/zsh-completions/"*.zsh; do
+    [[ -f "$f" ]] && backup_and_link "$f" "$ZSH_COMP_DIR/$(basename "$f")"
+  done
+fi
+
 # --- 4. Mise + runtimes ---
 echo
 if [[ ! -f "$HOME/.local/bin/mise" ]]; then
@@ -209,6 +216,17 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
     backup_and_link "$PRIVATE_DIR/configs/ssh/config" "$HOME/.ssh/config"
+  fi
+
+  # ~/.zshrc.d/ drop-ins from dotfiles-private. Each file is sourced by
+  # ~/.zshrc's `for _f in ~/.zshrc.d/*.sh` loop. Self-gating (e.g.
+  # g3-mac.sh returns early on non-Darwin) so they're safe everywhere.
+  if [[ -d "$PRIVATE_DIR/configs/shell" ]]; then
+    mkdir -p "$HOME/.zshrc.d"
+    for sh in "$PRIVATE_DIR"/configs/shell/*.sh; do
+      [[ -f "$sh" ]] || continue
+      backup_and_link "$sh" "$HOME/.zshrc.d/$(basename "$sh")"
+    done
   fi
 
   # Hand off to the private installer for ori (operator-only: PAT stash,
