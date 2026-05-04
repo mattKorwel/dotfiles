@@ -195,6 +195,14 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     [[ -f "$ORI_CFG_SRC/$f" ]] && backup_and_link "$ORI_CFG_SRC/$f" "$ORI_CFG_DST/$f"
   done
 
+  # ~/.ori/policies/cloudcode.permission.json: operator's harness
+  # permission policy. ori install reads it when generating cloudcode.json.
+  if [[ -f "$PRIVATE_DIR/configs/cloudcode/permission.json" ]]; then
+    mkdir -p "$ORI_CFG_DST/policies"
+    backup_and_link "$PRIVATE_DIR/configs/cloudcode/permission.json" \
+      "$ORI_CFG_DST/policies/cloudcode.permission.json"
+  fi
+
   # ~/.ssh/config: my personal ssh config travels with private dotfiles
   # so I don't lose it across machines. Mode 0644 is fine (no secrets).
   if [[ -f "$PRIVATE_DIR/configs/ssh/config" ]]; then
