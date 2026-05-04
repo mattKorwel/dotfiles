@@ -23,7 +23,19 @@
 [safe]
 	directory = *
 [user]
-    name = Matt Korwel
-    email = matt.korwel@gmail.com
+	name = Matt Korwel
+	email = matt.korwel@gmail.com
+	signingkey = ~/.ssh/identity/git-signing.pub
 [tag]
-    gpgSign = true
+	gpgSign = true
+
+# SSH-key signing instead of GPG: portable across machines, no gpg
+# install required. Key lives at ~/.ssh/identity/git-signing (private)
+# and ~/.ssh/identity/git-signing.pub (uploaded to github as a Signing
+# Key, NOT an auth key). Bootstrap scp's the private key to remotes so
+# they can also sign. Backup of the private key lives in operator's
+# password vault — never committed anywhere.
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers
