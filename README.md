@@ -42,9 +42,9 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 Three repos, one installer:
 
 - **`dotfiles`** (this one, public) — shell rc / starship / mise / aerospace / tmux / git config. The single `install.sh` here is the entry point for everything.
-- **`dotfiles-private`** (private) — corp-host shell-init (`shell-init.sh` sourced at every shell start) + cloudcode config (`configs/cloudcode/`).
-- **`ori`** + **`.agents`** vault — the agentic context CLI and its content store (cloned + symlinked by `install.sh` if you say yes).
+- **`dotfiles-private`** (private) — corp-host shell-init drop-ins (`configs/shell/*.sh` linked into `~/.zshrc.d/`), cloudcode permission policy (`configs/cloudcode/permission.json`), ori operator config (`configs/ori/{vaults,classes,bootstrap}.toml`), ssh config, and the operator-only `install.sh` that downloads the prebuilt `ori` binary and runs `ori install`.
+- **`ori`** + **`.agents`** vault — the agentic context CLI and its content store. Vault clone, harness symlinks (cloudcode/gemini/claude/codex), `cloudcode.json` generation, and the vault git pre-commit hook are all wired by `ori install` (which is invoked from `dotfiles-private/install.sh`).
 
-`dotfiles/install.sh` does it all: clones the public repo, links shell + tool configs, installs zsh plugins + completions, runs `mise install`, prompts to clone the private dotfiles, prompts to clone & build ori, prompts to clone the .agents vault, then auto-wires ori into cloudcode (`ori mcp install`) and installs the vault git pre-commit hook (`ori vault install-hook`). Re-run any time; every step is idempotent.
+`dotfiles/install.sh` does it all: clones the public repo, links shell + tool configs, installs zsh plugins + completions, runs `mise install`, then (if you have access) clones `dotfiles-private` and runs its installer — which downloads the latest prebuilt `ori` binary from GitHub releases and runs `ori install` (clones the vault, wires harness `AGENTS.md` + `skills/` symlinks, generates per-machine `~/.config/cloudcode/cloudcode.json`, installs the vault `pre-commit` hook, runs the fortification audit). Re-run any time; every step is idempotent.
 
 For the design behind ori + the .agents vault, see [`~/dev/.agents/projects/distributed-arch/phase-1/`](https://github.com/mattkorwel/.agents/tree/main/projects/distributed-arch/phase-1) (private).
