@@ -6,7 +6,7 @@
 # Two-stage completion for project/branch:
 #   ori start <TAB>                    → list projects (with trailing /)
 #   ori start <project>/<TAB>          → list that project's branches
-#                                        (always includes 'primary')
+#                                        (default branch is 'main')
 
 _ori_start_target() {
   local cur="${words[CURRENT]}"
@@ -47,26 +47,34 @@ _ori() {
       local -a subs
       subs=(
         'start:start (or resume) a project/branch'
+        'resume:re-attach to an existing session'
+        'attach:attach to a cloudcode serve (headless)'
+        'stop:stop a serve process'
         'shell:open a terminal next to the session'
+        'sh:alias for shell'
         'status:trail UI: live sessions'
         's:alias for status'
         'projects:list projects'
         'p:alias for projects'
+        'project:project management'
+        'doc:read/append project docs'
         'pointer:manage pointers'
-        'workshop:manage workshops'
-        'doc:read/write project docs'
         'session:manage sessions'
+        'workshop:manage workshops'
+        'fleet:per-workshop drift table'
+        'artifacts:artifact registry'
+        'handoff:cross-session handoff bundles'
         'install:wire ori into harnesses on this host'
+        'upgrade:self-upgrade the ori binary'
         'auth:manage credentials'
         'mcp:MCP server commands'
         'vault:vault management'
-        'project:project management'
       )
       _describe -t commands 'ori command' subs
       ;;
     args)
       case $line[1] in
-        start|shell)
+        start|shell|sh|resume|attach|stop)
           # Complete --workshop <id> if the previous word is --workshop;
           # otherwise complete the project[/branch] target.
           if [[ "${words[CURRENT-1]}" == "--workshop" ]]; then
@@ -77,15 +85,18 @@ _ori() {
           ;;
         pointer)
           if (( CURRENT == 2 )); then
-            local -a sub=(list show set state suspend resume abandon clear)
+            local -a sub=(list show set state suspend resume abandon clear rename)
             compadd -- $sub
           else
             _ori_start_target
           fi
           ;;
-        workshop)
+        workshop|workshops)
           if (( CURRENT == 2 )); then
-            local -a sub=(list show add remove ssh tmux bootstrap here)
+            local -a sub=(
+              list show add remove rename ssh attach run probe
+              ssh-config tmux here bootstrap observed desired
+            )
             compadd -- $sub
           else
             _ori_workshops
@@ -93,7 +104,7 @@ _ori() {
           ;;
         doc)
           if (( CURRENT == 2 )); then
-            local -a sub=(read append write)
+            local -a sub=(read append)
             compadd -- $sub
           else
             _ori_projects
@@ -101,10 +112,55 @@ _ori() {
           ;;
         project)
           if (( CURRENT == 2 )); then
-            local -a sub=(list show create)
+            local -a sub=(list show create set)
             compadd -- $sub
           else
             _ori_projects
+          fi
+          ;;
+        session)
+          if (( CURRENT == 2 )); then
+            local -a sub=(list show register suspend resume abandon)
+            compadd -- $sub
+          fi
+          ;;
+        vault)
+          if (( CURRENT == 2 )); then
+            local -a sub=(
+              list show config checkpoint refresh append-agents
+              audit-fortification install-hook validate
+            )
+            compadd -- $sub
+          fi
+          ;;
+        mcp)
+          if (( CURRENT == 2 )); then
+            local -a sub=(serve list)
+            compadd -- $sub
+          fi
+          ;;
+        fleet)
+          if (( CURRENT == 2 )); then
+            local -a sub=(status drift)
+            compadd -- $sub
+          fi
+          ;;
+        artifacts|artifact)
+          if (( CURRENT == 2 )); then
+            local -a sub=(list get add remove rm)
+            compadd -- $sub
+          fi
+          ;;
+        handoff|handoffs)
+          if (( CURRENT == 2 )); then
+            local -a sub=(list show start sanitize approve send ack)
+            compadd -- $sub
+          fi
+          ;;
+        auth)
+          if (( CURRENT == 2 )); then
+            local -a sub=(github status clear)
+            compadd -- $sub
           fi
           ;;
       esac
