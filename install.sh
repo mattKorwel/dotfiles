@@ -191,8 +191,9 @@ fi
 
 if [[ -d "$PRIVATE_DIR" ]]; then
   # cloudcode plugins + commands are now bundled in the ori binary;
-  # 'ori install' (section 6 below) writes them to ~/.local/share/ori/
-  # and symlinks them into ~/.config/cloudcode/. Nothing to do here.
+  # 'ori install' (run from $PRIVATE_DIR/install.sh below) writes them
+  # to ~/.local/share/ori/ and symlinks them into ~/.config/cloudcode/.
+  # Nothing to do here.
 
   # ~/.ori/{classes,bootstrap,vaults}.toml: per-user policy that travels
   # with dotfiles. Sharable across machines (no host-specific paths).
