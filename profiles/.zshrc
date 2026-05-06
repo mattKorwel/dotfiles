@@ -22,6 +22,18 @@ elif command -v mise &> /dev/null; then
   eval "$(mise activate zsh)"
 fi
 
+# Re-assert operator dirs at the FRONT of PATH after mise activates.
+# mise prepends its install dirs (~/.local/share/mise/installs/.../bin)
+# which would otherwise shadow ~/dev/bin — and `go install` writes to
+# the mise go bin dir by default, so an accidental `go install ./cmd/ori`
+# would beat the operator-built ~/dev/bin/ori. Putting ~/dev/bin ahead
+# of mise dirs ensures `which ori` always resolves to the operator's
+# canonical binary.
+typeset -U path
+path=("$HOME/.local/bin" $path)
+path=("$HOME/dev/bin" $path)
+export PATH
+
 # Starship hostname color: each per-class drop-in in ~/.zshrc.d/ exports
 # STARSHIP_HOSTNAME_<CLASS> for its own class. If nothing claimed the
 # host, treat it as local.
