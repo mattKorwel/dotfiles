@@ -94,9 +94,21 @@ source "$DOTFILES_DIR/lib/symlink.sh"
 echo
 echo "🔗 Linking configs..."
 
-for f in .zshrc .bashrc .bash_profile; do
+for f in .zshrc .zshenv .bashrc .bash_profile; do
   [[ -f "$DOTFILES_DIR/profiles/$f" ]] && backup_and_link "$DOTFILES_DIR/profiles/$f" "$HOME/$f"
 done
+
+# ~/.zshenv.d/ public drop-ins (env vars sourced for ALL zsh, including
+# non-interactive ssh). Each file self-gates so it's safe to symlink
+# everywhere. Operator-specific PATH lives in dotfiles-private/configs/
+# zshenv.d/ (handled below in the private block).
+if [[ -d "$DOTFILES_DIR/zshenv.d" ]]; then
+  mkdir -p "$HOME/.zshenv.d"
+  for sh in "$DOTFILES_DIR"/zshenv.d/*.sh; do
+    [[ -f "$sh" ]] || continue
+    backup_and_link "$sh" "$HOME/.zshenv.d/$(basename "$sh")"
+  done
+fi
 
 backup_and_link "$DOTFILES_DIR/.config/mise/config.toml"     "$HOME/.config/mise/config.toml"
 backup_and_link "$DOTFILES_DIR/.config/starship.toml"        "$HOME/.config/starship.toml"
@@ -228,6 +240,18 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     for sh in "$PRIVATE_DIR"/configs/shell/*.sh; do
       [[ -f "$sh" ]] || continue
       backup_and_link "$sh" "$HOME/.zshrc.d/$(basename "$sh")"
+    done
+  fi
+
+  # ~/.zshenv.d/ drop-ins. ~/.zshenv (loader) is sourced for ALL zsh
+  # invocations including non-interactive ssh — that's why this exists
+  # separately from ~/.zshrc.d. Anything that needs to be on PATH for
+  # `ssh host 'cmd'` belongs in zshenv.d, not zshrc.d.
+  if [[ -d "$PRIVATE_DIR/configs/zshenv.d" ]]; then
+    mkdir -p "$HOME/.zshenv.d"
+    for sh in "$PRIVATE_DIR"/configs/zshenv.d/*.sh; do
+      [[ -f "$sh" ]] || continue
+      backup_and_link "$sh" "$HOME/.zshenv.d/$(basename "$sh")"
     done
   fi
 

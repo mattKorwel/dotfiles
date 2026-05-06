@@ -104,11 +104,15 @@ alias l="ls -CF"
 alias grep='grep --color=auto'
 
 # --- 6. Tooling Paths ---
-export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
-[[ -d "$HOME/.antigravity/antigravity/bin" ]] && export PATH="$PATH:$HOME/.antigravity/antigravity/bin"
+# PATH is set in ~/.zshenv.d/ so non-interactive SSH (ori fleet upgrade,
+# agent invocations) sees the same binaries. See:
+#   dotfiles-private/configs/zshenv.d/00-path.sh    (operator dirs:
+#                                                    ~/dev/bin, ~/.local/bin,
+#                                                    ~/.gcli, antigravity)
+#   dotfiles/zshenv.d/10-env.sh                     (COLORTERM, EDITOR)
 
 # --- 7. Custom Scripts & Integrations ---
-# Load Gemini CLI Shortcuts & Functions
+# Load Gemini CLI Shortcuts & Functions. These are interactive
+# (functions like gswitch operate on the current shell's cwd) so they
+# stay here, not in zshenv.
 [[ -f ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh ]] && source ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh
-
-export PATH="$HOME/dev/bin:$PATH"
