@@ -215,6 +215,14 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     backup_and_link "$PRIVATE_DIR/bin/ori-setup" "$HOME/dev/bin/ori-setup"
   fi
 
+  # ~/dev/bin/health: bespoke system-wide health check (dotfiles, gcert,
+  # ssh, mise, ori brain). File is systemwidehealthcheck.sh; symlinked
+  # as 'health' for short typing.
+  if [[ -f "$PRIVATE_DIR/bin/systemwidehealthcheck.sh" ]]; then
+    mkdir -p "$HOME/dev/bin"
+    backup_and_link "$PRIVATE_DIR/bin/systemwidehealthcheck.sh" "$HOME/dev/bin/health"
+  fi
+
   # ~/.ssh/config: my personal ssh config travels with private dotfiles
   # so I don't lose it across machines. Mode 0644 is fine (no secrets).
   if [[ -f "$PRIVATE_DIR/configs/ssh/config" ]]; then
