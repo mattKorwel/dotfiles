@@ -2,17 +2,17 @@
 #
 # dotfiles installer — single entry point for mac & linux setup.
 #
-# Run on a fresh machine (one-liner — pipe a PAT in so private repos
-# and the private ori binary download all work without prompts):
+# Run on a fresh machine (one-liner — pipe a PAT in so the private
+# dotfiles repo can be cloned without prompts):
 #
 #   GITHUB_PAT=ghp_xxx ORI_INSTALL_YES=1 \
 #     bash <(curl -fsSL https://raw.githubusercontent.com/mattkorwel/dotfiles/main/install.sh)
 #
-# After install, the PAT lives at ~/.ori/github-pat (mode 0600) so all
-# subsequent runs / `ori workshop bootstrap` invocations work env-free.
-#
 # Or after cloning:
 #   ~/dev/dotfiles/install.sh
+#
+# After this completes, install the brain-only ori with:
+#   ori-setup all     # (mac only; sets up GCE server + cattle clients)
 #
 # Idempotent: safe to re-run any time. Each step skips itself if already done.
 #
@@ -21,8 +21,8 @@
 #   2. Symlink shell + tool configs
 #   3. Zsh plugins + tool completions
 #   4. Mise + runtimes
-#   5. Private dotfiles (clone, link configs, then run private/install.sh
-#      which handles operator-only ori setup)
+#   5. Private dotfiles (clone, link configs incl. ori-setup, then run
+#      private/install.sh which is now a brain-only no-op stub)
 
 set -e
 
@@ -58,10 +58,6 @@ PRIVATE_REPO_URL="https://github.com/mattkorwel/dotfiles-private.git"
 
 DOTFILES_DIR="$HOME/dev/dotfiles"
 PRIVATE_DIR="$HOME/dev/dotfiles-private"
-
-# Vault location, clone URL, and clone logic all live in ori
-# (~/.ori/vaults.toml + `ori install`). This script no longer needs to
-# know about it.
 
 export DOTFILES_BACKUP_DIR="$DOTFILES_DIR/.backups"
 
@@ -185,9 +181,10 @@ if [[ -f "$MISE_BIN" ]]; then
   "$MISE_BIN" install
 fi
 
-# --- 5. Private dotfiles (cloudcode config + corp shell-init) ---
+# --- 5. Private dotfiles (cloudcode config + corp shell-init + ori-setup) ---
 # Skipped on remote workers (bootstrap passes --no-private). Operator
-# physical machines clone it for ssh aliases + ori configs + corp shell.
+# physical machines clone it for ssh aliases, cloudcode policy, ori-setup,
+# and corp shell drop-ins.
 echo
 if [[ "$SKIP_PRIVATE" == "1" ]]; then
   echo "⏭️  Skipping private dotfiles (--no-private)"
@@ -202,26 +199,20 @@ else
 fi
 
 if [[ -d "$PRIVATE_DIR" ]]; then
-  # cloudcode plugins + commands are now bundled in the ori binary;
-  # 'ori install' (run from $PRIVATE_DIR/install.sh below) writes them
-  # to ~/.local/share/ori/ and symlinks them into ~/.config/cloudcode/.
-  # Nothing to do here.
-
-  # ~/.ori/{classes,bootstrap,vaults}.toml: per-user policy that travels
-  # with dotfiles. Sharable across machines (no host-specific paths).
-  ORI_CFG_SRC="$PRIVATE_DIR/configs/ori"
-  ORI_CFG_DST="$HOME/.ori"
-  mkdir -p "$ORI_CFG_DST"
-  for f in classes.toml bootstrap.toml vaults.toml; do
-    [[ -f "$ORI_CFG_SRC/$f" ]] && backup_and_link "$ORI_CFG_SRC/$f" "$ORI_CFG_DST/$f"
-  done
-
   # ~/.ori/policies/cloudcode.permission.json: operator's harness
-  # permission policy. ori install reads it when generating cloudcode.json.
+  # permission policy. Used by cloudcode (separate from ori brain).
+  ORI_CFG_DST="$HOME/.ori"
   if [[ -f "$PRIVATE_DIR/configs/cloudcode/permission.json" ]]; then
     mkdir -p "$ORI_CFG_DST/policies"
     backup_and_link "$PRIVATE_DIR/configs/cloudcode/permission.json" \
       "$ORI_CFG_DST/policies/cloudcode.permission.json"
+  fi
+
+  # ~/dev/bin/ori-setup: bespoke installer for the ori brain (per-fleet:
+  # mac/prime/alpha/beta/ori-gce). Symlinked from dotfiles-private/bin/.
+  if [[ -f "$PRIVATE_DIR/bin/ori-setup" ]]; then
+    mkdir -p "$HOME/dev/bin"
+    backup_and_link "$PRIVATE_DIR/bin/ori-setup" "$HOME/dev/bin/ori-setup"
   fi
 
   # ~/.ssh/config: my personal ssh config travels with private dotfiles
@@ -255,9 +246,7 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     done
   fi
 
-  # Hand off to the private installer for ori (operator-only: PAT stash,
-  # ori binary, ori install). Skipped entirely when --no-private (i.e.
-  # remote workers, where bootstrap already handles all of this).
+  # Hand off to the private installer for any operator-only follow-ups.
   if [[ -x "$PRIVATE_DIR/install.sh" ]]; then
     echo
     echo "▶️  Running $PRIVATE_DIR/install.sh"
