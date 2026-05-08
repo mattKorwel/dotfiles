@@ -36,13 +36,11 @@ backup_and_link() {
   echo "🔗 $dst → $src"
 }
 
-# clone_or_pull <git-url> <dest-dir> [--gh]
-#   Clone if missing, ff-pull if present. With --gh, uses `gh repo clone`
-#   (for private repos) instead of `git clone`. Honors $MISE_BIN if set.
+# clone_or_pull <git-url> <dest-dir>
+#   Clone if missing, ff-pull if present.
 clone_or_pull() {
   local url=$1
   local dest=$2
-  local use_gh=${3:-}
 
   if [[ -d "$dest/.git" ]]; then
     echo "📡 Updating $(basename "$dest")..."
@@ -52,44 +50,5 @@ clone_or_pull() {
 
   echo "📡 Cloning $(basename "$dest")..."
   mkdir -p "$(dirname "$dest")"
-  if [[ "$use_gh" == "--gh" ]]; then
-    if [[ -n "${MISE_BIN:-}" ]] && [[ -x "$MISE_BIN" ]]; then
-      "$MISE_BIN" exec -- gh repo clone "$url" "$dest"
-    else
-      gh repo clone "$url" "$dest"
-    fi
-  else
-    git clone "$url" "$dest"
-  fi
-}
-
-# ensure_gh_auth
-#   Ensure `gh` is authenticated. Honors $MISE_BIN.
-#
-#   Three modes, in priority order:
-#     1. $GITHUB_PAT set → non-interactive: pipe to `gh auth login --with-token`
-#     2. tty present → interactive `gh auth login` (browser flow)
-#     3. no tty + no PAT → fail loudly so the caller knows the install will
-#        skip private-repo steps
-ensure_gh_auth() {
-  local gh_cmd=(gh)
-  if [[ -n "${MISE_BIN:-}" ]] && [[ -x "$MISE_BIN" ]]; then
-    gh_cmd=("$MISE_BIN" exec -- gh)
-  fi
-  if "${gh_cmd[@]}" auth status >/dev/null 2>&1; then
-    return 0
-  fi
-  if [[ -n "${GITHUB_PAT:-}" ]]; then
-    echo "🔐 Authenticating gh with $GITHUB_PAT (non-interactive)..."
-    echo "${GITHUB_PAT}" | "${gh_cmd[@]}" auth login --with-token
-    return $?
-  fi
-  if [[ -t 0 ]] && [[ -t 1 ]]; then
-    echo "🔐 GitHub authentication required for private repositories..."
-    "${gh_cmd[@]}" auth login
-    return $?
-  fi
-  echo "⚠️  gh not authenticated and no \$GITHUB_PAT and no tty. Skipping." >&2
-  echo "   Set GITHUB_PAT=<token> in env to auth non-interactively." >&2
-  return 1
+  git clone "$url" "$dest"
 }
