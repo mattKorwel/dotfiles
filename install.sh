@@ -223,16 +223,11 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     backup_and_link "$PRIVATE_DIR/bin/systemwidehealthcheck.sh" "$HOME/dev/bin/health"
   fi
 
-  # ~/.config/cloudcode/plugins/*: ESM plugins shared across machines.
-  # cloudcode.json itself is per-machine (paths to ori binary embed),
-  # so it's NOT symlinked — ori-setup writes it on each host.
-  if [[ -d "$PRIVATE_DIR/configs/cloudcode/plugins" ]]; then
-    mkdir -p "$HOME/.config/cloudcode/plugins"
-    for plugin in "$PRIVATE_DIR"/configs/cloudcode/plugins/*.js; do
-      [[ -f "$plugin" ]] || continue
-      backup_and_link "$plugin" "$HOME/.config/cloudcode/plugins/$(basename "$plugin")"
-    done
-  fi
+  # NOTE: ori-bridge.js used to be symlinked here from
+  # dotfiles-private/configs/cloudcode/plugins/. It now lives inside the
+  # ori binary (internal/cli/harnesses/cloudcode/plugins/) and gets
+  # extracted by 'ori bridge install', which ori-setup runs on each host.
+  # Mixing concerns was wrong — the bridge is part of ori, not dotfiles.
 
   # ~/.ssh/config: my personal ssh config travels with private dotfiles
   # so I don't lose it across machines. Mode 0644 is fine (no secrets).
