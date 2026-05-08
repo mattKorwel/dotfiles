@@ -223,6 +223,17 @@ if [[ -d "$PRIVATE_DIR" ]]; then
     backup_and_link "$PRIVATE_DIR/bin/systemwidehealthcheck.sh" "$HOME/dev/bin/health"
   fi
 
+  # ~/.config/cloudcode/plugins/*: ESM plugins shared across machines.
+  # cloudcode.json itself is per-machine (paths to ori binary embed),
+  # so it's NOT symlinked — ori-setup writes it on each host.
+  if [[ -d "$PRIVATE_DIR/configs/cloudcode/plugins" ]]; then
+    mkdir -p "$HOME/.config/cloudcode/plugins"
+    for plugin in "$PRIVATE_DIR"/configs/cloudcode/plugins/*.js; do
+      [[ -f "$plugin" ]] || continue
+      backup_and_link "$plugin" "$HOME/.config/cloudcode/plugins/$(basename "$plugin")"
+    done
+  fi
+
   # ~/.ssh/config: my personal ssh config travels with private dotfiles
   # so I don't lose it across machines. Mode 0644 is fine (no secrets).
   if [[ -f "$PRIVATE_DIR/configs/ssh/config" ]]; then
