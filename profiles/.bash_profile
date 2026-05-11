@@ -1,5 +1,5 @@
-# Gemini CLI bin for cross-shell compatibility
-export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
+# Note: gemini binary is provided by mise (npm:@google/gemini-cli),
+# not from a per-channel ~/.gcli install (removed 2026-05-11).
 
 # Load .bashrc if it exists (which handles mise activation)
 if [ -f ~/.bashrc ]; then

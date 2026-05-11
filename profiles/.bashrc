@@ -37,8 +37,8 @@ alias ls='ls --color=auto'
 alias ll='ls -alF'
 alias grep='grep --color=auto'
 
-# Gemini CLI bin
-export PATH="$HOME/.gcli/main/node_modules/.bin:$PATH"
+# Note: gemini binary is provided by mise (npm:@google/gemini-cli),
+# not from a per-channel ~/.gcli install (removed 2026-05-11).
 
 # Load Gemini CLI Shortcuts & Functions
 [[ -f ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh ]] && . ~/dev/dotfiles/.gemini-scripts/gemini-functions.sh

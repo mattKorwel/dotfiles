@@ -220,7 +220,7 @@ alias grep='grep --color=auto'
 # agent invocations) sees the same binaries. See:
 #   dotfiles-private/configs/zshenv.d/00-path.sh    (operator dirs:
 #                                                    ~/dev/bin, ~/.local/bin,
-#                                                    ~/.gcli, antigravity)
+#                                                    antigravity)
 #   dotfiles/zshenv.d/10-env.sh                     (COLORTERM, EDITOR)
 
 # --- 7. Custom Scripts & Integrations ---
