@@ -145,40 +145,13 @@ function lport([int]$port) {
 # The "Clear" Shortcut
 function cls { Clear-Host }
 
-# --- Gemini CLI Version Manager (High Performance) ---
-
-# Note: Using Join-Path for cleaner Windows path handling
-function gnightly { & (Join-Path $HOME ".gcli\nightly\node_modules\.bin\gemini.ps1") @args }
-function gstable   { & (Join-Path $HOME ".gcli\stable\node_modules\.bin\gemini.ps1") @args }
-function gpreview  { & (Join-Path $HOME ".gcli\preview\node_modules\.bin\gemini.ps1") @args }
-
-function gupdate-all {
-    Write-Host "📡 Updating Gemini CLI versions..." -ForegroundColor Cyan
-    
-    $baseDir = Join-Path $HOME ".gcli"
-    $channels = "main", "nightly", "stable", "preview"
-    
-    foreach ($ch in $channels) {
-        $path = Join-Path $baseDir $ch
-        if (-not (Test-Path $path)) { New-Item -ItemType Directory -Path $path -Force | Out-Null }
-    }
-
-    Write-Host "📡 Refreshing 'gemini' (GitHub main branch)..."
-    npm install --prefix (Join-Path $baseDir "main") https://github.com/google-gemini/gemini-cli#main
-    
-    Write-Host "📡 Refreshing 'gnightly' (npm @nightly)..."
-    npm install --prefix (Join-Path $baseDir "nightly") @google/gemini-cli@nightly
-    
-    Write-Host "📡 Refreshing 'gstable' (npm @latest)..."
-    npm install --prefix (Join-Path $baseDir "stable") @google/gemini-cli@latest
-    
-    Write-Host "📡 Refreshing 'gpreview' (npm @preview)..."
-    npm install --prefix (Join-Path $baseDir "preview") @google/gemini-cli@preview
-    
-    if (Get-Command mise -ErrorAction SilentlyContinue) { mise reshim }
-    
-    Write-Host "`n✅ All versions updated! Use 'gemini', 'gnightly', 'gstable', or 'gpreview'." -ForegroundColor Green
-}
+# Gemini CLI: managed entirely by mise (npm:@google/gemini-cli=nightly
+# in ~/.config/mise/config.toml). Use plain `gemini` from the prompt.
+#
+# The per-channel `gnightly` / `gstable` / `gpreview` functions and the
+# `gupdate-all` multi-channel installer were removed 2026-05-11. They
+# wrote to ~\.gcli\{nightly,stable,preview}\ (~660MB across 4 dupe
+# installs) and were never used. To restore: see git history.
 
 # --- Git Workspace Switcher ---
 function _get_wt_path([string]$branch) {

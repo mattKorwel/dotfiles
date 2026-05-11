@@ -69,42 +69,14 @@ function gapi() {
        -d "$json_payload"
 }
 
-# --- Gemini CLI Version Manager (High Performance) ---
-
-# Isolated aliases for specific channels
-function gnightly() { ~/.gcli/nightly/node_modules/.bin/gemini "$@"; }
-function gstable() { ~/.gcli/stable/node_modules/.bin/gemini "$@"; }
-function gpreview() { ~/.gcli/preview/node_modules/.bin/gemini "$@"; }
-
-# NOTE: The main 'gemini' command is managed by mise in ~/.config/mise/config.toml
-# to ensure it works across zsh/bash subshells without alias issues.
-
-# Update all versions at once
-function gupdate-all() {
-  echo "Updating Gemini CLI versions..."
-  mkdir -p ~/.gcli/main ~/.gcli/nightly ~/.gcli/stable ~/.gcli/preview
-
-  echo "📡 Refreshing 'gemini' (GitHub main branch)..."
-  npm install --prefix ~/.gcli/main https://github.com/google-gemini/gemini-cli#main
-
-  echo "📡 Refreshing 'gnightly' (npm @nightly)..."
-  npm install --prefix ~/.gcli/nightly @google/gemini-cli@nightly
-
-  echo "📡 Refreshing 'gstable' (npm @latest)..."
-  npm install --prefix ~/.gcli/stable @google/gemini-cli@latest
-
-  echo "📡 Refreshing 'gpreview' (npm @preview)..."
-  npm install --prefix ~/.gcli/preview @google/gemini-cli@preview
-
-  # Ensure mise reshim is called to pick up potential binary changes
-  mise reshim
-
-  echo -e "\n✅ All versions updated! Use 'gemini', 'gnightly', 'gstable', or 'gpreview'."
-}
-# Aliases for common typos
-alias gupadte-all='gupdate-all'
-alias gudpate-all='gupdate-all'
-alias gup-all='gupdate-all'
+# Gemini CLI: managed entirely by mise (npm:@google/gemini-cli=nightly
+# in ~/.config/mise/config.toml). Use plain `gemini` from the prompt.
+#
+# The per-channel `gnightly` / `gstable` / `gpreview` functions and the
+# `gupdate-all` multi-channel installer were removed 2026-05-11. They
+# wrote to ~/.gcli/{nightly,stable,preview}/ (~660MB across 4 dupe
+# installs) and were never used (zero history hits in 64K lines).
+# To restore: see git history for the removal commit.
 # Prunes all git worktrees except the main one for a given repo path.
 # Uses 'git-common-dir' to ensure we find the owner repo.
 # Usage: gcleanup-worktrees [repo_path] [--force]
