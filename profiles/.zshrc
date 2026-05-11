@@ -15,8 +15,28 @@ else
 fi
 
 # --- 2. Tool Initialization (Mise, Starship, Zoxide) ---
-# Mise (Main version manager)
-if [[ -f "$HOME/.local/bin/mise" ]]; then
+# Mise (Main version manager).
+#
+# `mise activate zsh` runs the mise binary on every shell start to
+# emit ~80 lines of shell (PATH export, hook function definitions,
+# command_not_found_handler, and a final `_mise_hook` call). The
+# binary fork costs ~170ms per shell start; the eval of the output
+# costs another ~350ms; the initial _mise_hook costs ~260ms. Total
+# ~780ms — the dominant remaining new-tab cost on mac.
+#
+# We pre-cache the activate output to ~/.cache/mise-activate.zsh
+# in install.sh, so each shell start sources the cached file
+# directly and skips the binary fork. Saves ~170ms per shell.
+#
+# Cache invalidation: install.sh regenerates on every run. To force
+# refresh after `mise self-update` or installing a new tool that
+# affects PATH, run:  mise activate zsh > ~/.cache/mise-activate.zsh
+#
+# Fallback chain: cached file → live `mise activate` if cache absent
+# → no-op if mise itself absent.
+if [[ -s "$HOME/.cache/mise-activate.zsh" ]]; then
+  source "$HOME/.cache/mise-activate.zsh"
+elif [[ -f "$HOME/.local/bin/mise" ]]; then
   eval "$($HOME/.local/bin/mise activate zsh)"
 elif command -v mise &> /dev/null; then
   eval "$(mise activate zsh)"

@@ -200,6 +200,17 @@ if [[ -f "$MISE_BIN" ]]; then
   echo "📡 Configuring mise + installing tools..."
   "$MISE_BIN" trust "$DOTFILES_DIR"
   "$MISE_BIN" install
+
+  # Pre-cache `mise activate zsh` output to avoid forking the mise
+  # binary on every shell start. The cached file is sourced by
+  # profiles/.zshrc instead of `eval $(mise activate zsh)`. Saves
+  # ~170ms per new shell. Cache is regenerated on every install.sh
+  # run; manual refresh after `mise self-update` or installing a
+  # new tool that affects PATH:
+  #   mise activate zsh > ~/.cache/mise-activate.zsh
+  echo "🚄 Caching mise activate output..."
+  mkdir -p "$HOME/.cache"
+  "$MISE_BIN" activate zsh > "$HOME/.cache/mise-activate.zsh"
 fi
 
 echo
