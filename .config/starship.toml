@@ -1,9 +1,54 @@
 # Move the prompt to a new line
 add_newline = true
 
-# The main prompt layout
+# Module-level execution caps. Set explicitly so we don't get
+# "command timed out after 500ms" warnings on slow filesystems
+# (network mounts, FUSE overlays) where a `git` invocation
+# can exceed the default 500ms budget.
+#   scan_timeout    — max ms to scan files for module triggers
+#                     (e.g. detect_files=["package.json"]). Bumped
+#                     from default 30ms because cold-cache APFS stat
+#                     of a directory with 40+ entries (mix of git
+#                     repos, fig exports, large dirs) can exceed
+#                     30ms on first prompt after login. 100ms is
+#                     comfortable headroom; the actual scan returns
+#                     in <5ms once the cache is warm.
+#   command_timeout — max ms to wait for an external command
+#                     (git, mise, etc.) before giving up and
+#                     rendering without that module's output.
+scan_timeout = 100
+command_timeout = 1000
+
+# The main prompt layout. Modules NOT listed here do not render OR
+# scan, even if they're "default-enabled" by starship — verified
+# empirically 2026-05-11 with a /tmp dir containing trigger files
+# for rust/java/kotlin/scala/dart/swift/zig/lua/cpp/terraform/ruby/
+# php; only the modules in this format string ran.
+#
+# Currently active modules (cost in parens, when triggered):
+#   directory, fill, character, time, env_var.HOSTNAME_*  (free)
+#   git_branch, git_status                                (~5ms in regular dirs;
+#                                                          500-750ms on FUSE
+#                                                          overlays — see
+#                                                          starship-fast.toml
+#                                                          swap mechanism in
+#                                                          ~/.zshrc)
+#   cmd_duration                                          (free)
+#   nodejs                                                (~150ms when in a
+#                                                          project with
+#                                                          package.json)
+#   golang                                                (~64ms when in a
+#                                                          go.mod project)
+#
+# Removed (2026-05-11):
+#   docker_context — read ~/.docker/config.json on EVERY prompt
+#                    (~55-111ms always-on). Use `docker context show`
+#                    when you need it.
+#   python         — ran `python --version` on every detect, costing
+#                    ~320ms when in a python project. Activate
+#                    explicitly via `python --version` when needed.
 format = """
-$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang$docker_context$python${env_var.HOSTNAME_LOCAL}${env_var.HOSTNAME_WORK}${env_var.HOSTNAME_REMOTE}${env_var.HOSTNAME_CORP}${env_var.HOSTNAME_ROAM}$time
+$directory$git_branch$git_status$fill$cmd_duration$nodejs$golang${env_var.HOSTNAME_LOCAL}${env_var.HOSTNAME_WORK}${env_var.HOSTNAME_REMOTE}${env_var.HOSTNAME_CORP}${env_var.HOSTNAME_ROAM}$time
 $character"""
 
 [fill]
@@ -43,13 +88,9 @@ detect_files = ["package.json", ".node-version", "nvmrc"]
 symbol = " "
 format = "[$symbol($version)](bold #00ffff) "
 
-[docker_context]
-symbol = " "
-format = "[$symbol($context)](bold #00aaff) "
-
-[python]
-symbol = " "
-format = "[$symbol(${pyenv_prefix}${version})](bold #ffcc00) "
+# [docker_context] and [python] removed 2026-05-11 (see comment on
+# format string). To restore: add the module's $name to format and
+# uncomment the section.
 
 [hostname]
 disabled = true

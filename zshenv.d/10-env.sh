@@ -22,3 +22,13 @@ export COLORTERM=truecolor
   fi
 }
 [[ -z "$VISUAL" ]] && export VISUAL="$EDITOR"
+
+# Stop `mise` from walking the filesystem above $HOME looking for
+# parent mise.toml overrides. We use only the global
+# ~/.config/mise/config.toml; any walk above $HOME is wasted work,
+# and on slow filesystems (network mounts, FUSE overlays) every `..`
+# stat pays an overlay tax. Setting this here (zshenv.d) is required
+# because `ceiling_paths` is an early-init setting — mise reads it
+# BEFORE parsing ~/.config/mise/config.toml, so the toml entry is a
+# no-op.
+export MISE_CEILING_PATHS="$HOME"

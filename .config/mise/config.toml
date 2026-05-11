@@ -3,7 +3,6 @@ go = "latest"
 node = "24"
 starship = "latest"
 zoxide = "latest"
-fzf = "latest"
 gh = "latest"
 gcloud = "latest"
 usage = "latest"
@@ -12,3 +11,32 @@ chezmoi = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
+
+# Performance tuning (added 2026-05-11). The default `mise activate`
+# sets up a precmd hook that runs `mise hook-env` on EVERY prompt
+# to pick up per-directory `mise.toml` overrides. Profiling on mac
+# (zprof in ~/.zshrc) showed this hook costs ~270ms per prompt —
+# visible as keystroke/Enter sluggishness.
+#
+# We don't use per-directory mise.toml at all; this global config
+# is the only one. So:
+#   * chpwd_only=true   — skip the per-prompt scan entirely; only
+#                          re-evaluate when we cd.
+#   * cache_ttl=1h      — even when cd does trigger a scan, reuse
+#                          a recent result for an hour. (We never
+#                          edit this config interactively.)
+#
+# To force a refresh after editing this file: `mise hook-env`.
+#
+# The nested-table form `[settings.hook_env]` is required; the
+# top-level `[hook_env]` form (which mise's docs sometimes show)
+# is rejected by mise ≤2026.4.x with "unknown field" warnings.
+[settings.hook_env]
+chpwd_only = true
+cache_ttl = "1h"
+
+# NOTE on ceiling_paths: mise also walks UP the filesystem from
+# CWD looking for `mise.toml` overrides. We disable that walk via
+# the env var MISE_CEILING_PATHS=$HOME in zshenv.d/10-env.sh.
+# `ceiling_paths` is an early-init setting — mise reads it BEFORE
+# parsing this file — so it can't be set here.

@@ -99,6 +99,29 @@ fi
 
 backup_and_link "$DOTFILES_DIR/.config/mise/config.toml"     "$HOME/.config/mise/config.toml"
 backup_and_link "$DOTFILES_DIR/.config/starship.toml"        "$HOME/.config/starship.toml"
+
+# Derive the "fast" starship config from the canonical one. The fast
+# variant is identical except [git_branch] and [git_status] are
+# disabled. It's used on slow filesystems (network mounts, FUSE
+# overlays) where a `git` invocation can take hundreds of ms per
+# prompt — those prompts are rendered with starship-fast.toml via a
+# chpwd hook in profiles/.zshrc that flips STARSHIP_CONFIG when
+# $PWD matches a pattern in $STARSHIP_FAST_PATHS (set per-host;
+# empty by default in this public repo).
+#
+# Awk pipeline: when we hit "[git_branch]" or "[git_status]", emit
+# the section header AND insert `disabled = true` as the first key.
+# All other lines pass through unchanged.
+echo "🚄 Generating starship-fast.toml (derived; do not edit by hand)..."
+awk '
+  /^\[git_branch\]$/ || /^\[git_status\]$/ {
+    print
+    print "disabled = true"
+    next
+  }
+  { print }
+' "$DOTFILES_DIR/.config/starship.toml" > "$HOME/.config/starship-fast.toml"
+
 backup_and_link "$DOTFILES_DIR/.config/git/gitconfig.shared" "$HOME/.config/git/gitconfig.shared"
 backup_and_link "$DOTFILES_DIR/.config/git/allowed_signers"  "$HOME/.config/git/allowed_signers"
 backup_and_link "$DOTFILES_DIR/.gemini/settings.json"        "$HOME/.gemini/settings.json"
@@ -123,7 +146,14 @@ echo
 echo "🔌 Setting up zsh plugins..."
 ZSH_PLUGIN_DIR="$HOME/.local/share/zsh-plugins"
 mkdir -p "$ZSH_PLUGIN_DIR"
-for plugin in "zsh-users/zsh-autosuggestions" "zsh-users/zsh-syntax-highlighting" "zsh-users/zsh-completions"; do
+# We deliberately do NOT install zsh-users/zsh-completions (the
+# 190-completion bundle for tools like archlinux-java, bento4,
+# bitcoin-cli, etc.) — almost none of those tools are installed
+# here and each is parsed at compinit time. Built-in zsh completions
+# cover the common case (find, ls, ssh, git, etc.); per-tool
+# completions we actually use are generated below or shipped
+# statically in zsh-completions/.
+for plugin in "zsh-users/zsh-autosuggestions" "zsh-users/zsh-syntax-highlighting"; do
   name=$(basename "$plugin")
   if [[ ! -d "$ZSH_PLUGIN_DIR/$name" ]]; then
     echo "📥 Cloning $name..."
@@ -136,18 +166,18 @@ done
 echo "⚙️  Generating shell completions..."
 ZSH_COMP_DIR="$HOME/.local/share/zsh-completions"
 mkdir -p "$ZSH_COMP_DIR"
-command -v mise >/dev/null && mise completion zsh > "$ZSH_COMP_DIR/_mise"
+# Only completions the operator actually tab-completes interactively
+# get generated. Each generator runs every install.sh and writes the
+# current tool's completion script. To add: append a one-liner.
+# To remove: delete the line AND `rm $ZSH_COMP_DIR/<file>` once.
 command -v gh   >/dev/null && gh   completion -s zsh > "$ZSH_COMP_DIR/_gh"
-command -v npm  >/dev/null && npm  completion > "$ZSH_COMP_DIR/npm.zsh"
 
-if command -v gcloud >/dev/null; then
-  GCLOUD_SDK_ROOT=$(gcloud info --format="value(basic.sdk_root)" 2>/dev/null || true)
-elif command -v mise >/dev/null; then
-  GCLOUD_SDK_ROOT=$(mise where gcloud 2>/dev/null || true)
-fi
-if [[ -n "${GCLOUD_SDK_ROOT:-}" && -d "$GCLOUD_SDK_ROOT" ]]; then
-  echo "source '$GCLOUD_SDK_ROOT/completion.zsh.inc'" > "$ZSH_COMP_DIR/gcloud.zsh"
-fi
+# Intentionally NOT generated (verified 2026-05-11 not used interactively):
+#   * mise (`_mise`)        — operator edits config.toml directly
+#   * npm (`npm.zsh`)       — npm is mostly invoked via package.json scripts
+#   * usage (`_usage`)      — was always 0 bytes; tool isn't tab-completed
+#   * gcloud                — `bashcompinit` adds ~260ms per shell start
+# To restore any of these: see git history for the removal commit.
 
 # Static completion files shipped in this dotfiles repo.
 if [[ -d "$DOTFILES_DIR/zsh-completions" ]]; then
