@@ -148,6 +148,11 @@ setopt histignorealldups sharehistory appendhistory
 zstyle ':completion:*' menu yes select
 
 # Key bindings (Cross-platform standard)
+# Force emacs keymap. Zsh auto-switches to vi mode when $EDITOR contains
+# "vi", which breaks Ctrl-R (reverse history search). We keep a non-vi
+# editor for git etc. but want emacs-style line editing in the shell.
+bindkey -e
+
 bindkey '^[[3~' delete-char
 bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
