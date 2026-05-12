@@ -37,18 +37,17 @@ _ori_scope_path() {
   if (( ${#children} == 0 )); then
     return 1
   fi
-  # Each child is a candidate; suffix '/' so users can keep walking.
-  compadd -P "$prefix" -S '/' -- $children
-  # Also add the parent itself as a terminal completion (no trailing /)
-  # so `ori scope show amplify<TAB>` doesn't force a slash.
-  compadd -P "$prefix" -- $children
+  # Single compadd with `-S /` appends a slash so the user can keep
+  # walking; zsh's autoremovable-suffix machinery strips it when the
+  # next char is a space (terminating the word). No need for a second
+  # no-suffix compadd — that just doubled every entry.
+  compadd -P "$prefix" -S / -- $children
 }
 
 _ori_top_scopes() {
   local -a scopes
   scopes=(${(f)"$(_ori_scope_children '')"})
-  compadd -S '/' -- $scopes
-  compadd -- $scopes
+  compadd -S / -- $scopes
 }
 
 _ori_brokers() {
