@@ -1,4 +1,5 @@
 [tools]
+python = "latest"
 go = "latest"
 node = "24"
 starship = "latest"
@@ -8,7 +9,6 @@ gcloud = "latest"
 usage = "latest"
 "npm:@google/gemini-cli" = "nightly"
 chezmoi = "latest"
-python = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
