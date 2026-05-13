@@ -128,6 +128,10 @@ backup_and_link "$DOTFILES_DIR/.gemini/settings.json"        "$HOME/.gemini/sett
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   backup_and_link "$DOTFILES_DIR/.config/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
+  # kitty (replaces Ghostty under AeroSpace — see learning at
+  # amplify/dotfiles/aerospace-wrong: Ghostty's native NSWindow
+  # tabs confuse AeroSpace's window count).
+  backup_and_link "$DOTFILES_DIR/.config/kitty/kitty.conf"        "$HOME/.config/kitty/kitty.conf"
 fi
 
 if [[ "$OSTYPE" == "darwin"* || "$OSTYPE" == "linux-gnu"* ]]; then
