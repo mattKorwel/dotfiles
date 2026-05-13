@@ -103,7 +103,7 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
     alt-y = 'close'
 
     # --- Launchers ---
-    alt-enter = "exec-and-forget open -na Ghostty"
+    alt-enter = "exec-and-forget open -na kitty"
     alt-b = 'exec-and-forget open -na "Google Chrome" --args --new-window --profile-directory="Default"'
     alt-g = 'exec-and-forget open -na "Google Chrome" --args --new-window --profile-directory="Profile 1"'
 
