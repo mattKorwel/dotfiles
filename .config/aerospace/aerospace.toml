@@ -30,6 +30,20 @@ persistent-workspaces = ['6-Dev', '7-Google', '8-Comms', '9-Pers']
 # Mouse follows focus
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
+# Note: previously had an `on-focus-changed` callback driving a
+# script that toggled kitty background opacity to highlight the
+# focused window. The callback never fired in this AeroSpace
+# version (0.20.3-Beta) — `on-focused-monitor-changed` works fine
+# (mouse-follow above) but `on-focus-changed` did not, even after
+# `launchctl kickstart` of the AeroSpace agent. Switched to a
+# kitty-side solution: see kitty.conf
+# `draw_window_borders_for_single_window` + `active_border_color`,
+# which colors the kitty window border on focus state without any
+# external script. If we ever want opacity-based highlighting
+# again, the script lives in git history and the kitty side
+# (dynamic_background_opacity, listen_on, allow_remote_control)
+# is still in place.
+
 # Gaps
 [gaps]
     inner.horizontal = 5
