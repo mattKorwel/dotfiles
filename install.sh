@@ -9,12 +9,6 @@
 # Or after cloning:
 #   ~/.local/share/dotfiles/install.sh
 #
-# Managed machines: the canonical bootstrap is
-# the at-head install.sh in the internal source tree, which runs chezmoi for
-# machine-specific config and then calls THIS script for the cross-machine
-# baseline. See:
-#   <internal-path>/install.sh
-#
 # Idempotent: safe to re-run any time. Each step skips itself if already done.
 #
 # Sections:

@@ -5,7 +5,31 @@ node = "24"
 starship = "latest"
 zoxide = "latest"
 gh = "latest"
-gcloud = "latest"
+# gcloud removed from mise 2026-05-26.
+#
+# gcloud was added to mise for unified version management, but the
+# mise/vfox integration runs the gcloud binary's `env_keys` hook on
+# the first prompt of every new shell to discover what env vars
+# gcloud needs. gcloud is a Python app whose cold-start is multi-
+# second on mac (Python import graph + gatekeeper code-signing
+# checks), so first-prompt was stalling 5-13s before the user could
+# type. Profiling: see ~/.zshenv.d/05-mount-probe.sh commit message
+# and the trace at /tmp/mise-zsh-trace.log.
+#
+# Alternative installs:
+#   * Homebrew already has it at
+#     /opt/homebrew/share/google-cloud-sdk/bin/gcloud (no shim in
+#     /opt/homebrew/bin yet — symlink it if you want `gcloud` on
+#     PATH unconditionally:
+#       ln -s ../share/google-cloud-sdk/bin/gcloud /opt/homebrew/bin/gcloud
+#   * The mise-installed copy still exists at
+#     ~/.local/share/mise/installs/gcloud/566.0.0/bin/gcloud and
+#     works fine when invoked directly. It's just not auto-shimmed
+#     anymore.
+#
+# To restore: uncomment the line below and run `mise install`.
+# Be aware of the 5-13s first-prompt cost it brings back.
+# gcloud = "latest"
 usage = "latest"
 "npm:@google/gemini-cli" = "nightly"
 chezmoi = "latest"
